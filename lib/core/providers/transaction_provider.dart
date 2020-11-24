@@ -1,0 +1,158 @@
+import 'package:flutter/widgets.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:money_manager/core/database/database.dart';
+import 'package:money_manager/core/models/database/transaction_model.dart';
+import 'package:money_manager/core/utils/datetime_util.dart';
+
+class TransactionProvider extends ChangeNotifier {
+  final log = Logger('TransactionProvider');
+  final dbProvider = DatabaseProvider.dbProvider;
+
+  List<TransactionModel> _transactionList = [];
+  List<TransactionModel> get transactionList => _transactionList;
+
+  String getAggregateQuery(int startTime, int endTime) => """
+    SELECT
+      COALESCE(SUM(${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
+      , COALESCE(SUM(${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
+    FROM ${TransactionModel.tableName}
+    WHERE
+      ${TransactionModel.colTransactionTime} >= $startTime
+      AND ${TransactionModel.colTransactionTime} <= $endTime
+  """;
+
+  TransactionProvider() {
+    // Initialise the state on Provider initialization
+    getTransactions();
+    getAggregates();
+  }
+
+  Future<Map<String, Map<String, double>>> getAggregates({DateTime date}) async {
+    final db = await dbProvider.database;
+
+    if (date == null) {
+      date = DateTime.now();
+    }
+    Map<String, Map<String, double>> aggregate = {
+      'debit': {
+        'day': 0.0,
+        'week': 0.0,
+        'month': 0.0,
+        'year': 0.0,
+      },
+      'credit': {
+        'day': 0.0,
+        'week': 0.0,
+        'month': 0.0,
+        'year': 0.0,
+      },
+      'balance': {
+        'day': 0.0,
+        'week': 0.0,
+        'month': 0.0,
+        'year': 0.0,
+      },
+    };
+
+    List<Map<String, dynamic>> dayAggregate =
+        await db.rawQuery(getAggregateQuery(
+      DateTimeUtil.startOfDay(date).millisecondsSinceEpoch,
+      DateTimeUtil.endOfDay(date).millisecondsSinceEpoch,
+    ));
+    aggregate['credit']['day'] = dayAggregate[0]['creditAggregate'];
+    aggregate['debit']['day'] = dayAggregate[0]['debitAggregate'];
+    aggregate['balance']['day'] = aggregate['debit']['day'] - aggregate['credit']['day'];
+
+    List<Map<String, dynamic>> weekAggregate =
+        await db.rawQuery(getAggregateQuery(
+      DateTimeUtil.startOfWeek(date).millisecondsSinceEpoch,
+      DateTimeUtil.endOfWeek(date).millisecondsSinceEpoch,
+    ));
+    aggregate['credit']['week'] = weekAggregate[0]['creditAggregate'];
+    aggregate['debit']['week'] = weekAggregate[0]['debitAggregate'];
+    aggregate['balance']['week'] = aggregate['debit']['week'] - aggregate['credit']['week'];
+
+    List<Map<String, dynamic>> monthAggregate =
+        await db.rawQuery(getAggregateQuery(
+      DateTimeUtil.startOfMonth(date).millisecondsSinceEpoch,
+      DateTimeUtil.endOfMonth(date).millisecondsSinceEpoch,
+    ));
+    aggregate['credit']['month'] = monthAggregate[0]['creditAggregate'];
+    aggregate['debit']['month'] = monthAggregate[0]['debitAggregate'];
+    aggregate['balance']['month'] = aggregate['debit']['month'] - aggregate['credit']['month'];
+
+    List<Map<String, dynamic>> yearAggregate =
+        await db.rawQuery(getAggregateQuery(
+      DateTimeUtil.startOfYear(date).millisecondsSinceEpoch,
+      DateTimeUtil.endOfYear(date).millisecondsSinceEpoch,
+    ));
+    aggregate['credit']['year'] = yearAggregate[0]['creditAggregate'];
+    aggregate['debit']['year'] = yearAggregate[0]['debitAggregate'];
+    aggregate['balance']['year'] = aggregate['debit']['year'] - aggregate['credit']['year'];
+
+    return aggregate;
+  }
+
+  Future<List<TransactionModel>> getTransactions(
+      {List<String> columns = TransactionModel.columns, String query}) async {
+    final db = await dbProvider.database;
+
+    List<Map<String, dynamic>> result;
+
+    if (query != null && query.isNotEmpty) {
+      result = await db.query(TransactionModel.tableName,
+          columns: columns,
+          where: 'description LIKE ?',
+          whereArgs: ["%$query%"]);
+    } else {
+      result = await db.query(TransactionModel.tableName, columns: columns);
+    }
+
+    List<TransactionModel> txns = result.isNotEmpty
+        ? result.map((item) => TransactionModel.fromDatabaseJson(item)).toList()
+        : [];
+
+    this._transactionList = txns;
+
+    notifyListeners();
+
+    return txns;
+  }
+
+  Future<int> addTransaction(TransactionModel txn) async {
+    final db = await dbProvider.database;
+    var result =
+        await db.insert(TransactionModel.tableName, txn.toDatabaseJson());
+
+    this._transactionList = await getTransactions();
+
+    return result;
+  }
+
+  Future<int> updateTransaction(TransactionModel txn) async {
+    final db = await dbProvider.database;
+
+    var result = await db.update(
+        TransactionModel.tableName, txn.toDatabaseJson(),
+        where: '${TransactionModel.colId} = ?', whereArgs: [txn.id]);
+
+    this._transactionList = await getTransactions();
+
+    return result;
+  }
+
+  Future<int> deleteTransaction(int id) async {
+    final db = await dbProvider.database;
+
+    var result = await db
+        .delete(TransactionModel.tableName, where: 'id = ?', whereArgs: [id]);
+
+    this._transactionList = await getTransactions();
+
+    return result;
+  }
+}
+
+final transactionProvider =
+    ChangeNotifierProvider((_) => TransactionProvider());
