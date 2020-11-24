@@ -16,6 +16,21 @@ class TransactionUpdatePage extends HookWidget {
     },
   );
 
+  final List<BottomNavigationBarItem> bottomNavTxnTypeItems = [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.trending_up),
+      label: 'Income',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.trending_down),
+      label: 'Expense',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.swap_horiz),
+      label: 'Transfer',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final provider = useProvider(vmProvider);
@@ -24,7 +39,7 @@ class TransactionUpdatePage extends HookWidget {
     return Scaffold(
       appBar: AppBar(),
       bottomNavigationBar: BottomNavigationBar(
-        items: provider.txnTypeItems,
+        items: bottomNavTxnTypeItems,
         currentIndex: provider.selectedIndex,
         onTap: (int index) => context.read(vmProvider).selectedIndex = index,
       ),

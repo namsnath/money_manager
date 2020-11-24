@@ -8,21 +8,6 @@ class TransactionUpdateVm extends ChangeNotifier {
   List<TransactionTypeModel> _txnTypes;
   int _selectedIndex = 0;
 
-  List<BottomNavigationBarItem> txnTypeItems = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.trending_up),
-      label: 'Income',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.trending_down),
-      label: 'Expense',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.swap_horiz),
-      label: 'Transfer',
-    ),
-  ];
-
   int get selectedIndex => _selectedIndex;
   set selectedIndex(int index) {
     _selectedIndex = index;
