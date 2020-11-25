@@ -62,7 +62,7 @@ class TransactionProvider extends ChangeNotifier {
     aggregate['credit']['day'] = dayAggregate[0]['creditAggregate'];
     aggregate['debit']['day'] = dayAggregate[0]['debitAggregate'];
     aggregate['balance']['day'] =
-        aggregate['debit']['day'] - aggregate['credit']['day'];
+        aggregate['credit']['day'] - aggregate['debit']['day'];
 
     List<Map<String, dynamic>> weekAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -72,7 +72,7 @@ class TransactionProvider extends ChangeNotifier {
     aggregate['credit']['week'] = weekAggregate[0]['creditAggregate'];
     aggregate['debit']['week'] = weekAggregate[0]['debitAggregate'];
     aggregate['balance']['week'] =
-        aggregate['debit']['week'] - aggregate['credit']['week'];
+        aggregate['credit']['week'] - aggregate['debit']['week'];
 
     List<Map<String, dynamic>> monthAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -82,7 +82,7 @@ class TransactionProvider extends ChangeNotifier {
     aggregate['credit']['month'] = monthAggregate[0]['creditAggregate'];
     aggregate['debit']['month'] = monthAggregate[0]['debitAggregate'];
     aggregate['balance']['month'] =
-        aggregate['debit']['month'] - aggregate['credit']['month'];
+        aggregate['credit']['month'] - aggregate['debit']['month'];
 
     List<Map<String, dynamic>> yearAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -92,7 +92,7 @@ class TransactionProvider extends ChangeNotifier {
     aggregate['credit']['year'] = yearAggregate[0]['creditAggregate'];
     aggregate['debit']['year'] = yearAggregate[0]['debitAggregate'];
     aggregate['balance']['year'] =
-        aggregate['debit']['year'] - aggregate['credit']['year'];
+        aggregate['credit']['year'] - aggregate['debit']['year'];
 
     return aggregate;
   }
