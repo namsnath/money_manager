@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_treeview/tree_view.dart';
+import 'package:hooks_riverpod/all.dart';
 import 'package:logging/logging.dart';
 import 'package:money_manager/core/database/database.dart';
 import 'package:money_manager/core/models/database/category_model.dart';
@@ -9,7 +10,7 @@ class CategoryProvider extends ChangeNotifier {
   final log = Logger('CategoryProvider');
   final dbProvider = DatabaseProvider.dbProvider;
 
-  static int get defaultCategory => 62; // Miscellaneous
+  static int get defaultCategory => 0; // No Category
 
   String getHierarchyQuery() => """
   WITH RECURSIVE categoriesHierarchical(${CategoryModel.colId}, ${CategoryModel.colFkSelfParentId}, ${CategoryModel.colFkTransactionTypeId}, ${CategoryModel.colCategory}) AS
@@ -151,13 +152,15 @@ class CategoryProvider extends ChangeNotifier {
       List<String> categories = [];
 
       for (int j = 1; j <= 10; j++) {
-        if (temp['iTree$j'] != null) categories.add(temp['iTree$j']);
-        else break;
+        if (temp['iTree$j'] != null)
+          categories.add(temp['iTree$j']);
+        else
+          break;
       }
-      
+
       temp['categoryDisplayName'] = categories.join(':');
       categoryMap[temp['id']] = temp['categoryDisplayName'];
-      
+
       return temp;
     }).toList();
 
@@ -238,7 +241,8 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<int> addCategory(CategoryModel account) async {
     final db = await dbProvider.database;
-    var result = await db.insert(CategoryModel.tableName, account.toDatabaseJson());
+    var result =
+        await db.insert(CategoryModel.tableName, account.toDatabaseJson());
 
     this._categoryList = await getAllCategories();
 
@@ -248,7 +252,8 @@ class CategoryProvider extends ChangeNotifier {
   Future<int> updateCategory(CategoryModel account) async {
     final db = await dbProvider.database;
 
-    var result = await db.update(CategoryModel.tableName, account.toDatabaseJson(),
+    var result = await db.update(
+        CategoryModel.tableName, account.toDatabaseJson(),
         where: '${CategoryModel.colId} = ?', whereArgs: [account.id]);
 
     this._categoryList = await getAllCategories();
@@ -259,11 +264,13 @@ class CategoryProvider extends ChangeNotifier {
   Future<int> deleteCategory(int id) async {
     final db = await dbProvider.database;
 
-    var result =
-        await db.delete(CategoryModel.tableName, where: 'id = ?', whereArgs: [id]);
+    var result = await db
+        .delete(CategoryModel.tableName, where: 'id = ?', whereArgs: [id]);
 
     this._categoryList = await getAllCategories();
 
     return result;
   }
 }
+
+final categoryProvider = ChangeNotifierProvider((_) => CategoryProvider());
