@@ -24,11 +24,10 @@ class TransactionProvider extends ChangeNotifier {
 
   TransactionProvider() {
     // Initialise the state on Provider initialization
-    getTransactions();
-    getAggregates();
   }
 
-  Future<Map<String, Map<String, double>>> getAggregates({DateTime date}) async {
+  Future<Map<String, Map<String, double>>> getAggregates(
+      {DateTime date}) async {
     final db = await dbProvider.database;
 
     if (date == null) {
@@ -62,7 +61,8 @@ class TransactionProvider extends ChangeNotifier {
     ));
     aggregate['credit']['day'] = dayAggregate[0]['creditAggregate'];
     aggregate['debit']['day'] = dayAggregate[0]['debitAggregate'];
-    aggregate['balance']['day'] = aggregate['debit']['day'] - aggregate['credit']['day'];
+    aggregate['balance']['day'] =
+        aggregate['debit']['day'] - aggregate['credit']['day'];
 
     List<Map<String, dynamic>> weekAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -71,7 +71,8 @@ class TransactionProvider extends ChangeNotifier {
     ));
     aggregate['credit']['week'] = weekAggregate[0]['creditAggregate'];
     aggregate['debit']['week'] = weekAggregate[0]['debitAggregate'];
-    aggregate['balance']['week'] = aggregate['debit']['week'] - aggregate['credit']['week'];
+    aggregate['balance']['week'] =
+        aggregate['debit']['week'] - aggregate['credit']['week'];
 
     List<Map<String, dynamic>> monthAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -80,7 +81,8 @@ class TransactionProvider extends ChangeNotifier {
     ));
     aggregate['credit']['month'] = monthAggregate[0]['creditAggregate'];
     aggregate['debit']['month'] = monthAggregate[0]['debitAggregate'];
-    aggregate['balance']['month'] = aggregate['debit']['month'] - aggregate['credit']['month'];
+    aggregate['balance']['month'] =
+        aggregate['debit']['month'] - aggregate['credit']['month'];
 
     List<Map<String, dynamic>> yearAggregate =
         await db.rawQuery(getAggregateQuery(
@@ -89,7 +91,8 @@ class TransactionProvider extends ChangeNotifier {
     ));
     aggregate['credit']['year'] = yearAggregate[0]['creditAggregate'];
     aggregate['debit']['year'] = yearAggregate[0]['debitAggregate'];
-    aggregate['balance']['year'] = aggregate['debit']['year'] - aggregate['credit']['year'];
+    aggregate['balance']['year'] =
+        aggregate['debit']['year'] - aggregate['credit']['year'];
 
     return aggregate;
   }
@@ -125,7 +128,7 @@ class TransactionProvider extends ChangeNotifier {
     var result =
         await db.insert(TransactionModel.tableName, txn.toDatabaseJson());
 
-    this._transactionList = await getTransactions();
+    notifyListeners();
 
     return result;
   }
@@ -137,7 +140,7 @@ class TransactionProvider extends ChangeNotifier {
         TransactionModel.tableName, txn.toDatabaseJson(),
         where: '${TransactionModel.colId} = ?', whereArgs: [txn.id]);
 
-    this._transactionList = await getTransactions();
+    notifyListeners();
 
     return result;
   }
@@ -148,7 +151,7 @@ class TransactionProvider extends ChangeNotifier {
     var result = await db
         .delete(TransactionModel.tableName, where: 'id = ?', whereArgs: [id]);
 
-    this._transactionList = await getTransactions();
+    notifyListeners();
 
     return result;
   }
