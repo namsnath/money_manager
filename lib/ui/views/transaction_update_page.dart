@@ -19,7 +19,12 @@ class TransactionUpdatePage extends HookWidget {
       final accounts = ref.watch(accountsMasterProvider).accountsList;
       final categories = ref.watch(categoryProvider).categoryList;
 
-      return TransactionUpdateVm(txnTypes, accounts, categories, ref.read);
+      return TransactionUpdateVm(
+        transactionTypes: txnTypes,
+        accounts: accounts,
+        categories: categories,
+        refRead: ref.read,
+      );
     },
   );
 

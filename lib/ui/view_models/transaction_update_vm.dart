@@ -86,16 +86,16 @@ class TransactionUpdateVm extends ChangeNotifier {
   }
 
   // Constructor
-  TransactionUpdateVm(
-    List<TransactionTypeModel> txnTypes,
+  TransactionUpdateVm({
+    List<TransactionTypeModel> transactionTypes,
     List<AccountMasterModel> accounts,
     List<CategoryModel> categories,
-    Reader read,
-  ) {
-    _txnTypes = txnTypes;
+    Reader refRead,
+  }) {
+    _txnTypes = transactionTypes;
     _accounts = accounts;
     _categories = categories;
-    this.read = read;
+    read = refRead;
 
     if (accounts.length > 0) {
       selectedfromAccount = accounts[0];
