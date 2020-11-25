@@ -403,7 +403,10 @@ class TransactionUpdatePage extends HookWidget {
             child: RaisedButton(
               color: Colors.red,
               child: Text('Cancel'),
-              onPressed: () => context.read(vmProvider).cancel(),
+              onPressed: () async {
+                context.read(vmProvider).cancel();
+                Navigator.of(context).pop();
+              },
             ),
           ),
           Spacer(flex: 1),
@@ -412,7 +415,11 @@ class TransactionUpdatePage extends HookWidget {
             child: RaisedButton(
               color: Colors.green,
               child: Text('Save'),
-              onPressed: () => context.read(vmProvider).save(),
+              onPressed: () async {
+                if (await context.read(vmProvider).save()) {
+                  Navigator.of(context).pop();
+                }
+              },
             ),
           ),
           Spacer(flex: 1),
