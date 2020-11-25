@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'package:money_manager/core/providers/accounts_master_provider.dart';
+import 'package:money_manager/core/providers/theme_provider.dart';
 import 'package:money_manager/core/providers/transaction_provider.dart';
 import 'package:money_manager/ui/views/transaction_update_page.dart';
 
@@ -174,6 +175,12 @@ class HomePage extends HookWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Money Manager Home Page'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.invert_colors),
+            onPressed: () => context.read(themeProvider).toggleTheme(),
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -192,6 +199,7 @@ class HomePage extends HookWidget {
         ),
         tooltip: 'Increment',
         child: Icon(Icons.add),
+        foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor,
       ),
     );
   }
