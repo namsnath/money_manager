@@ -199,7 +199,6 @@ class HomePage extends HookWidget {
         ),
         tooltip: 'Increment',
         child: Icon(Icons.add),
-        foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor,
       ),
     );
   }

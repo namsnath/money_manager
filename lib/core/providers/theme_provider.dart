@@ -19,9 +19,15 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      foregroundColor: Colors.teal,
+    ),
   );
   ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      foregroundColor: Colors.blue,
+    ),
   );
   get currentTheme => _isDark ? darkTheme : lightTheme;
 }
