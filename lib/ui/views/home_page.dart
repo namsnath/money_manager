@@ -182,12 +182,15 @@ class HomePage extends HookWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            getAggregateWidget(),
-          ],
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              getAggregateWidget(),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

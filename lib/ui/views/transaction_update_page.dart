@@ -444,13 +444,16 @@ class TransactionUpdatePage extends HookWidget {
         currentIndex: provider.selectedIndex,
         onTap: (int index) => context.read(vmProvider).selectedIndex = index,
       ),
-      body: Center(
-        child: Form(
-          child: Column(
-            children: <Widget>[
-              fieldsCard(),
-              actionButtons(),
-            ],
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10),
+        child: Center(
+          child: Form(
+            child: Column(
+              children: <Widget>[
+                fieldsCard(),
+                actionButtons(),
+              ],
+            ),
           ),
         ),
       ),
