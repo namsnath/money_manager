@@ -61,17 +61,24 @@ class DateTimeUtil {
   }
 
   static DateTime endOfWeek(DateTime date) {
-    DateTime endDate = firstDayOfWeek(date);
-    return DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
-    }
+    // Add 7 days to current date and get firstDay of next week (will return 12pm)
+    DateTime beginningNextWeek = firstDayOfWeek(date.add(Duration(days: 7)));
+    // Create DateTime for start of first day
+    DateTime endDate = startOfDay(beginningNextWeek);
+    // Subtract 1 ms to get previous day
+    endDate = endDate.subtract(Duration(milliseconds: 1));
+
+    return endDate;
+  }
 
   static DateTime endOfMonth(DateTime date) {
     var beginningNextMonth = (date.month < 12)
         ? DateTime(date.year, date.month + 1)
         : DateTime(date.year + 1, 1);
+
     beginningNextMonth = beginningNextMonth.subtract(Duration(milliseconds: 1));
 
-    return DateTime(beginningNextMonth.year, beginningNextMonth.month);
+    return beginningNextMonth;
   }
 
   static DateTime endOfYear(DateTime date) {
