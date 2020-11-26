@@ -6,10 +6,29 @@ import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
 import 'package:money_manager/core/models/form/validation_item.dart';
-import 'package:money_manager/core/providers/transaction_provider.dart';
+import 'package:money_manager/core/providers/database/providers.dart';
 
 class TransactionUpdateVm extends ChangeNotifier {
   final log = Logger('TransactionUpdateVm');
+
+  static final provider = ChangeNotifierProvider.autoDispose<TransactionUpdateVm>(
+    (ref) {
+      final txnTypes = ref
+          .watch(DbProviders.transactionTypeProvider)
+          .formTransactionTypeList;
+      final accounts =
+          ref.watch(DbProviders.accountsMasterProvider).accountsList;
+      final categories = ref.watch(DbProviders.categoryProvider).categoryList;
+
+      return TransactionUpdateVm(
+        transactionTypes: txnTypes,
+        accounts: accounts,
+        categories: categories,
+        refRead: ref.read,
+      );
+    },
+  );
+
   Reader read;
 
   // Other Provider Values
@@ -138,11 +157,14 @@ class TransactionUpdateVm extends ChangeNotifier {
           description: description.value,
         );
 
-        int insertedId = await read(transactionProvider).addTransaction(txn);
-        int insertedId2 = await read(transactionProvider).addTransaction(txn2);
+        int insertedId =
+            await read(DbProviders.transactionProvider).addTransaction(txn);
+        int insertedId2 =
+            await read(DbProviders.transactionProvider).addTransaction(txn2);
         return insertedId > 0 && insertedId2 > 0;
       } else {
-        int insertedId = await read(transactionProvider).addTransaction(txn);
+        int insertedId =
+            await read(DbProviders.transactionProvider).addTransaction(txn);
         return insertedId > 0;
       }
     } else {

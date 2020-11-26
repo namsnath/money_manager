@@ -5,28 +5,11 @@ import 'package:logging/logging.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:money_manager/core/models/database/account_master_model.dart';
-import 'package:money_manager/core/providers/accounts_master_provider.dart';
-import 'package:money_manager/core/providers/category_provider.dart';
-import 'package:money_manager/core/providers/transaction_type_provider.dart';
+import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/ui/view_models/transaction_update_vm.dart';
 
 class TransactionUpdatePage extends HookWidget {
   final Logger log = Logger('TransactionUpdate');
-  final vmProvider = ChangeNotifierProvider<TransactionUpdateVm>(
-    (ref) {
-      final txnTypes =
-          ref.watch(transactionTypeProvider).formTransactionTypeList;
-      final accounts = ref.watch(accountsMasterProvider).accountsList;
-      final categories = ref.watch(categoryProvider).categoryList;
-
-      return TransactionUpdateVm(
-        transactionTypes: txnTypes,
-        accounts: accounts,
-        categories: categories,
-        refRead: ref.read,
-      );
-    },
-  );
 
   final DateFormat dateFormatter = new DateFormat.yMMMd();
   final DateFormat timeFormatter = new DateFormat.jm();
@@ -47,7 +30,7 @@ class TransactionUpdatePage extends HookWidget {
   ];
 
   Row timeButtons() {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -111,7 +94,7 @@ class TransactionUpdatePage extends HookWidget {
   }
 
   Row amountField() {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -142,7 +125,7 @@ class TransactionUpdatePage extends HookWidget {
   }
 
   Row descriptionField() {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -172,7 +155,7 @@ class TransactionUpdatePage extends HookWidget {
   }
 
   Row accountDropdowns({bool transfer = false}) {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -291,8 +274,8 @@ class TransactionUpdatePage extends HookWidget {
   }
 
   Row categoryButton() {
-    final provider = useProvider(vmProvider);
-    final catProvider = useProvider(categoryProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
+    final catProvider = useProvider(DbProviders.categoryProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -368,7 +351,7 @@ class TransactionUpdatePage extends HookWidget {
   }
 
   fieldsCard() {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
     Column fieldsColumn;
 
     if (provider.selectedIndex == 0) {
@@ -409,7 +392,7 @@ class TransactionUpdatePage extends HookWidget {
               color: Colors.red,
               child: Text('Cancel'),
               onPressed: () async {
-                context.read(vmProvider).cancel();
+                context.read(TransactionUpdateVm.provider).cancel();
                 Navigator.of(context).pop();
               },
             ),
@@ -421,7 +404,7 @@ class TransactionUpdatePage extends HookWidget {
               color: Colors.green,
               child: Text('Save'),
               onPressed: () async {
-                if (await context.read(vmProvider).save()) {
+                if (await context.read(TransactionUpdateVm.provider).save()) {
                   Navigator.of(context).pop();
                 }
               },
@@ -435,14 +418,14 @@ class TransactionUpdatePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = useProvider(vmProvider);
+    final provider = useProvider(TransactionUpdateVm.provider);
 
     return Scaffold(
       appBar: AppBar(),
       bottomNavigationBar: BottomNavigationBar(
         items: bottomNavTxnTypeItems,
         currentIndex: provider.selectedIndex,
-        onTap: (int index) => context.read(vmProvider).selectedIndex = index,
+        onTap: (int index) => context.read(TransactionUpdateVm.provider).selectedIndex = index,
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10),

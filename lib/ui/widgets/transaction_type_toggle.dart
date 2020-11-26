@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-import 'package:money_manager/core/providers/transaction_type_provider.dart';
+import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/core/providers/transaction_type_toggle_provider.dart';
 
 class TransactionTypeToggle extends HookWidget {
   final txnTypeToggleProvider =
       ChangeNotifierProvider<TransactionTypeToggleProvider>((ref) {
-    final txnTypes = ref.watch(transactionTypeProvider).formTransactionTypeList;
+    final txnTypes = ref.watch(DbProviders.transactionTypeProvider).formTransactionTypeList;
 
     return TransactionTypeToggleProvider(txnTypes);
   });

@@ -156,6 +156,3 @@ class TransactionProvider extends ChangeNotifier {
     return result;
   }
 }
-
-final transactionProvider =
-    ChangeNotifierProvider((_) => TransactionProvider());

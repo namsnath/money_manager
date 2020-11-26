@@ -272,5 +272,3 @@ class CategoryProvider extends ChangeNotifier {
     return result;
   }
 }
-
-final categoryProvider = ChangeNotifierProvider((_) => CategoryProvider());

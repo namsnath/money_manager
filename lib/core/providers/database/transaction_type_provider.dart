@@ -54,6 +54,3 @@ class TransactionTypeProvider extends ChangeNotifier {
     return transactionTypes;
   }
 }
-
-final transactionTypeProvider =
-    ChangeNotifierProvider((_) => TransactionTypeProvider());

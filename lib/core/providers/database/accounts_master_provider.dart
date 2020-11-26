@@ -76,6 +76,3 @@ class AccountsMasterProvider extends ChangeNotifier {
     return result;
   }
 }
-
-final accountsMasterProvider =
-    ChangeNotifierProvider((_) => AccountsMasterProvider());

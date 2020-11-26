@@ -3,9 +3,8 @@ import 'package:logging/logging.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-import 'package:money_manager/core/providers/accounts_master_provider.dart';
+import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/core/providers/theme_provider.dart';
-import 'package:money_manager/core/providers/transaction_provider.dart';
 import 'package:money_manager/ui/views/transaction_update_page.dart';
 
 class HomePage extends HookWidget {
@@ -13,7 +12,7 @@ class HomePage extends HookWidget {
   static final log = Logger('HomePage');
 
   List<Text> getAccounts(BuildContext context) {
-    final accounts = useProvider(accountsMasterProvider);
+    final accounts = useProvider(DbProviders.accountsMasterProvider);
 
     final accountsText = accounts.accountsList
         .map((v) => Text(
@@ -26,7 +25,7 @@ class HomePage extends HookWidget {
   }
 
   Widget getAggregateWidget() {
-    final txnProvider = useProvider(transactionProvider);
+    final txnProvider = useProvider(DbProviders.transactionProvider);
     final aggregates = txnProvider.getAggregates();
 
     return FutureBuilder(
