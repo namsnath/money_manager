@@ -8,7 +8,7 @@ import 'package:money_manager/core/models/database/transaction_type_model.dart';
 
 class CategoryProvider extends ChangeNotifier {
   final log = Logger('CategoryProvider');
-  final dbProvider = DatabaseProvider.dbProvider;
+  final dbProvider = DatabaseHelper.dbProvider;
 
   static int get defaultCategory => 0; // No Category
 

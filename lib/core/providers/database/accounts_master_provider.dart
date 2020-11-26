@@ -6,7 +6,7 @@ import 'package:money_manager/core/models/database/account_master_model.dart';
 
 class AccountsMasterProvider extends ChangeNotifier {
   final log = Logger('AccountsMasterProvider');
-  final dbProvider = DatabaseProvider.dbProvider;
+  final dbProvider = DatabaseHelper.dbProvider;
 
   List<AccountMasterModel> _accountsList = [];
   List<AccountMasterModel> get accountsList => _accountsList;

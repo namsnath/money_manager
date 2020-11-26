@@ -7,7 +7,7 @@ import 'package:money_manager/core/utils/datetime_util.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final log = Logger('TransactionProvider');
-  final dbProvider = DatabaseProvider.dbProvider;
+  final dbProvider = DatabaseHelper.dbProvider;
 
   List<TransactionModel> _transactionList = [];
   List<TransactionModel> get transactionList => _transactionList;

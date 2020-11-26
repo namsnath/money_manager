@@ -20,7 +20,7 @@ void main() {
     ),
   );
 
-  DatabaseProvider.dbProvider.init();
+  DatabaseHelper.dbProvider.init();
 }
 
 class App extends HookWidget {

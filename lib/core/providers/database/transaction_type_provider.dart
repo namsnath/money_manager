@@ -6,7 +6,7 @@ import 'package:money_manager/core/models/database/transaction_type_model.dart';
 
 class TransactionTypeProvider extends ChangeNotifier {
   final log = Logger('TransactionTypeProvider');
-  final dbProvider = DatabaseProvider.dbProvider;
+  final dbProvider = DatabaseHelper.dbProvider;
 
   static const _formTransactionTypeIds = [1, 2, 3];
 

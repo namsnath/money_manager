@@ -9,9 +9,9 @@ import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
 
-class DatabaseProvider {
+class DatabaseHelper {
   final log = Logger('DatabaseProvider');
-  static final DatabaseProvider dbProvider = DatabaseProvider();
+  static final DatabaseHelper dbProvider = DatabaseHelper();
 
   static const databaseFileName = 'MoneyThingy.db';
 
