@@ -11,8 +11,9 @@ import 'package:money_manager/core/providers/database/providers.dart';
 class TransactionUpdateVm extends ChangeNotifier {
   final log = Logger('TransactionUpdateVm');
 
-  static final provider = ChangeNotifierProvider.autoDispose<TransactionUpdateVm>(
-    (ref) {
+  static final provider = ChangeNotifierProvider.autoDispose
+      .family<TransactionUpdateVm, AccountMasterModel>(
+    (ref, initialAccount) {
       final txnTypes = ref
           .watch(DbProviders.transactionTypeProvider)
           .formTransactionTypeList;
@@ -25,6 +26,7 @@ class TransactionUpdateVm extends ChangeNotifier {
         accounts: accounts,
         categories: categories,
         refRead: ref.read,
+        initialAccount: initialAccount,
       );
     },
   );
@@ -110,6 +112,7 @@ class TransactionUpdateVm extends ChangeNotifier {
     List<AccountMasterModel> accounts,
     List<CategoryModel> categories,
     Reader refRead,
+    AccountMasterModel initialAccount,
   }) {
     _txnTypes = transactionTypes;
     _accounts = accounts;
@@ -117,13 +120,12 @@ class TransactionUpdateVm extends ChangeNotifier {
     read = refRead;
 
     if (accounts.length > 0) {
-      selectedfromAccount = accounts[0];
+      selectedfromAccount = initialAccount ?? accounts[0];
       selectedToAccount = accounts[0];
     }
   }
 
   Future<bool> save() async {
-    log.info('Save called');
     if (amount.isValid && description.isValid) {
       // First transaction (Income, Expense, Transfer-Debit)
       TransactionModel txn = TransactionModel(

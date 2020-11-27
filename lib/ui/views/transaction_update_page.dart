@@ -8,11 +8,17 @@ import 'package:money_manager/core/models/database/account_master_model.dart';
 import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/ui/view_models/transaction_update_vm.dart';
 
-class TransactionUpdatePage extends HookWidget {
-  final Logger log = Logger('TransactionUpdate');
+// ScopedProvider to allow using the same value for all provider initialisations
+final initialAccountScopeProvider = ScopedProvider<AccountMasterModel>(null);
 
-  final DateFormat dateFormatter = new DateFormat.yMMMd();
-  final DateFormat timeFormatter = new DateFormat.jm();
+class TransactionUpdatePage extends HookWidget {
+  TransactionUpdatePage({
+    this.initialAccount,
+  });
+
+  final AccountMasterModel initialAccount;
+
+  final Logger log = Logger('TransactionUpdate');
 
   final List<BottomNavigationBarItem> bottomNavTxnTypeItems = [
     BottomNavigationBarItem(
@@ -29,8 +35,108 @@ class TransactionUpdatePage extends HookWidget {
     ),
   ];
 
-  Row timeButtons() {
-    final provider = useProvider(TransactionUpdateVm.provider);
+  @override
+  Widget build(BuildContext context) {
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
+
+    return ProviderScope(
+      overrides: [
+        // Override the scope with the passed account, so every widget uses the same provider
+        initialAccountScopeProvider.overrideWithValue(initialAccount),
+      ],
+      child: Scaffold(
+        appBar: AppBar(),
+        bottomNavigationBar: BottomNavigationBar(
+          items: bottomNavTxnTypeItems,
+          currentIndex: provider.selectedIndex,
+          onTap: (int index) => context
+              .read(TransactionUpdateVm.provider(initialAccount))
+              .selectedIndex = index,
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10),
+          child: Center(
+            child: Form(
+              child: Column(
+                children: <Widget>[
+                  FieldsCard(),
+                  ActionButtons(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FieldsCard extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
+
+    Column fieldsColumn;
+
+    if (provider.selectedIndex == 0) {
+      fieldsColumn = Column(
+        children: [
+          TimeButtons(),
+          AccountDropdowns(),
+          AmountField(),
+          CategoryButton(),
+          DescriptionField(),
+        ],
+      );
+    } else if (provider.selectedIndex == 1) {
+      fieldsColumn = Column(
+        children: [
+          TimeButtons(),
+          AccountDropdowns(),
+          AmountField(),
+          CategoryButton(),
+          DescriptionField(),
+        ],
+      );
+    } else if (provider.selectedIndex == 2) {
+      fieldsColumn = Column(
+        children: [
+          TimeButtons(),
+          AccountDropdowns(transfer: true),
+          AmountField(),
+          DescriptionField(),
+        ],
+      );
+    }
+
+    return Expanded(
+      child: ListView(
+        children: [
+          Card(
+            margin: EdgeInsets.symmetric(vertical: 20),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 20,
+                horizontal: 20,
+              ),
+              child: fieldsColumn,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TimeButtons extends HookWidget {
+  final DateFormat dateFormatter = new DateFormat.yMMMd();
+  final DateFormat timeFormatter = new DateFormat.jm();
+
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -92,9 +198,112 @@ class TransactionUpdatePage extends HookWidget {
       ],
     );
   }
+}
 
-  Row amountField() {
-    final provider = useProvider(TransactionUpdateVm.provider);
+class CategoryDialog extends HookWidget {
+  CategoryDialog({this.categoryTree});
+
+  final List<Node<dynamic>> categoryTree;
+
+  @override
+  Widget build(BuildContext context) {
+    TreeViewController _treeViewController = TreeViewController(
+      children: categoryTree,
+      selectedKey: null,
+    );
+
+    TreeViewTheme __treeViewTheme = TreeViewTheme(
+      expanderTheme: ExpanderThemeData(
+        type: ExpanderType.plusMinus,
+        size: 18,
+        color: Theme.of(context).textTheme.bodyText1.color,
+      ),
+      colorScheme: Theme.of(context).brightness == Brightness.light
+          ? ColorScheme.light(
+              background: Colors.transparent,
+              onBackground: Theme.of(context).textTheme.bodyText1.color,
+            )
+          : ColorScheme.dark(
+              background: Colors.transparent,
+              onBackground: Theme.of(context).textTheme.bodyText1.color,
+            ),
+    );
+
+    return AlertDialog(
+      title: Text(
+        'Double tap to select category',
+        textAlign: TextAlign.center,
+      ),
+      content: Container(
+        height: 400,
+        width: 300,
+        child: TreeView(
+          controller: _treeViewController,
+          theme: __treeViewTheme,
+          supportParentDoubleTap: true,
+          onNodeDoubleTap: (key) {
+            int returnVal = int.tryParse(key) ?? 0;
+            Navigator.of(context, rootNavigator: true).pop(returnVal);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class CategoryButton extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
+    final catProvider = useProvider(DbProviders.categoryProvider);
+
+    final categoryBtnText =
+        catProvider.categoryHierarchyMap[provider.selectedCategory?.id ?? 0] ??
+            'Uncategorized';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.ideographic,
+      children: [
+        Expanded(
+          flex: 1,
+          child: Icon(Icons.category),
+        ),
+        Spacer(flex: 1),
+        Expanded(
+          flex: 12,
+          child: RaisedButton(
+            child: Text(categoryBtnText),
+            onPressed: () async {
+              int selectedId = await showDialog<int>(
+                    context: context,
+                    builder: (_) => CategoryDialog(
+                      categoryTree: catProvider.getCategoryTree(
+                        transactionTypeId: provider.selectedTxnType.id,
+                      ),
+                    ),
+                  ) ??
+                  0; // Default value if dialog closed without selection
+
+              // This allows to persist provider state instead of setting to 0
+              if (selectedId != 0) {
+                provider.selectedCategory = selectedId;
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AmountField extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -123,9 +332,13 @@ class TransactionUpdatePage extends HookWidget {
       ],
     );
   }
+}
 
-  Row descriptionField() {
-    final provider = useProvider(TransactionUpdateVm.provider);
+class DescriptionField extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -153,9 +366,19 @@ class TransactionUpdatePage extends HookWidget {
       ],
     );
   }
+}
 
-  Row accountDropdowns({bool transfer = false}) {
-    final provider = useProvider(TransactionUpdateVm.provider);
+class AccountDropdowns extends HookWidget {
+  AccountDropdowns({
+    this.transfer = false,
+  });
+
+  final bool transfer;
+
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
+    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -224,223 +447,47 @@ class TransactionUpdatePage extends HookWidget {
       ],
     );
   }
+}
 
-  Future<int> showCategoryDialog(
-      BuildContext context, List<Node<dynamic>> categoryTree) {
-    TreeViewController _treeViewController = TreeViewController(
-      children: categoryTree,
-      selectedKey: null,
-    );
-
-    TreeViewTheme __treeViewTheme = TreeViewTheme(
-      expanderTheme: ExpanderThemeData(
-        type: ExpanderType.plusMinus,
-        size: 18,
-        color: Theme.of(context).textTheme.bodyText1.color,
-      ),
-      colorScheme: Theme.of(context).brightness == Brightness.light
-          ? ColorScheme.light(
-              background: Colors.transparent,
-              onBackground: Theme.of(context).textTheme.bodyText1.color,
-            )
-          : ColorScheme.dark(
-              background: Colors.transparent,
-              onBackground: Theme.of(context).textTheme.bodyText1.color,
-            ),
-    );
-
-    return showDialog<int>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Double tap to select category',
-          textAlign: TextAlign.center,
-        ),
-        content: Container(
-          height: 400,
-          width: 300,
-          child: TreeView(
-            controller: _treeViewController,
-            theme: __treeViewTheme,
-            supportParentDoubleTap: true,
-            onNodeDoubleTap: (key) {
-              int returnVal = int.tryParse(key) ?? 0;
-              Navigator.of(context, rootNavigator: true).pop(returnVal);
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Row categoryButton() {
-    final provider = useProvider(TransactionUpdateVm.provider);
-    final catProvider = useProvider(DbProviders.categoryProvider);
+class ActionButtons extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final initialAccount = useProvider(initialAccountScopeProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.ideographic,
       children: [
+        Spacer(flex: 1),
         Expanded(
-          flex: 1,
-          child: Icon(Icons.category),
+          flex: 2,
+          child: RaisedButton(
+            color: Colors.red,
+            child: Text('Cancel'),
+            onPressed: () async {
+              context
+                  .read(TransactionUpdateVm.provider(initialAccount))
+                  .cancel();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         Spacer(flex: 1),
         Expanded(
-          flex: 12,
-          child: Builder(
-            builder: (context) => RaisedButton(
-              child: Text(catProvider.categoryHierarchyMap[
-                      provider?.selectedCategory?.id ?? 0] ??
-                  'Uncategorized'),
-              onPressed: () async {
-                int selectedId = await showCategoryDialog(
-                      context,
-                      catProvider.getCategoryTree(
-                        transactionTypeId: provider.selectedTxnType.id,
-                      ),
-                    ) ??
-                    0; // Default value if dialog closed without selection
-
-                // This allows to persist provider state instead of setting to 0
-                if (selectedId != 0) {
-                  provider.selectedCategory = selectedId;
-                }
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Column expenseFields() {
-    return Column(
-      children: [
-        timeButtons(),
-        accountDropdowns(),
-        amountField(),
-        categoryButton(),
-        descriptionField(),
-      ],
-    );
-  }
-
-  Column incomeFields() {
-    return Column(
-      children: [
-        timeButtons(),
-        accountDropdowns(),
-        amountField(),
-        categoryButton(),
-        descriptionField(),
-      ],
-    );
-  }
-
-  Column transferFields() {
-    return Column(
-      children: [
-        timeButtons(),
-        accountDropdowns(transfer: true),
-        amountField(),
-        descriptionField(),
-      ],
-    );
-  }
-
-  fieldsCard() {
-    final provider = useProvider(TransactionUpdateVm.provider);
-    Column fieldsColumn;
-
-    if (provider.selectedIndex == 0) {
-      fieldsColumn = expenseFields();
-    } else if (provider.selectedIndex == 1) {
-      fieldsColumn = incomeFields();
-    } else if (provider.selectedIndex == 2) {
-      fieldsColumn = transferFields();
-    }
-
-    return Expanded(
-      child: ListView(
-        children: [
-          Card(
-            margin: EdgeInsets.symmetric(vertical: 20),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 20,
-              ),
-              child: fieldsColumn,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Builder actionButtons() {
-    return Builder(
-      builder: (context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Spacer(flex: 1),
-          Expanded(
-            flex: 2,
-            child: RaisedButton(
-              color: Colors.red,
-              child: Text('Cancel'),
-              onPressed: () async {
-                context.read(TransactionUpdateVm.provider).cancel();
+          flex: 3,
+          child: RaisedButton(
+            color: Colors.green,
+            child: Text('Save'),
+            onPressed: () async {
+              if (await context
+                  .read(TransactionUpdateVm.provider(initialAccount))
+                  .save()) {
                 Navigator.of(context).pop();
-              },
-            ),
-          ),
-          Spacer(flex: 1),
-          Expanded(
-            flex: 3,
-            child: RaisedButton(
-              color: Colors.green,
-              child: Text('Save'),
-              onPressed: () async {
-                if (await context.read(TransactionUpdateVm.provider).save()) {
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ),
-          Spacer(flex: 1),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = useProvider(TransactionUpdateVm.provider);
-
-    return Scaffold(
-      appBar: AppBar(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: bottomNavTxnTypeItems,
-        currentIndex: provider.selectedIndex,
-        onTap: (int index) =>
-            context.read(TransactionUpdateVm.provider).selectedIndex = index,
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 10),
-        child: Center(
-          child: Form(
-            child: Column(
-              children: <Widget>[
-                fieldsCard(),
-                actionButtons(),
-              ],
-            ),
+              }
+            },
           ),
         ),
-      ),
+        Spacer(flex: 1),
+      ],
     );
   }
 }

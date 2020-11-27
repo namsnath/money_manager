@@ -41,15 +41,20 @@ class HomePage extends HookWidget {
           bottom: TabBar(tabs: _accountTabs),
         ),
         body: TabBarView(children: _tabViews),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (BuildContext context) => TransactionUpdatePage(),
+        floatingActionButton: Builder(
+          builder: (tabContext) => FloatingActionButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (BuildContext context) => TransactionUpdatePage(
+                  initialAccount: accProvider
+                      .accountsList[DefaultTabController.of(tabContext).index],
+                ),
+              ),
             ),
+            tooltip: 'Add Transaction',
+            child: Icon(Icons.add),
           ),
-          tooltip: 'Add Transaction',
-          child: Icon(Icons.add),
         ),
       ),
     );
@@ -118,7 +123,8 @@ class SummaryDetails extends StatelessWidget {
     final weekStart = weekFormat.format(DateTimeUtil.startOfWeek(currentDate));
     final weekEnd = weekFormat.format(DateTimeUtil.endOfWeek(currentDate));
 
-    final monthStart = monthFormat.format(DateTimeUtil.startOfMonth(currentDate));
+    final monthStart =
+        monthFormat.format(DateTimeUtil.startOfMonth(currentDate));
     final monthEnd = monthFormat.format(DateTimeUtil.endOfMonth(currentDate));
 
     final yearStart = yearFormat.format(DateTimeUtil.startOfYear(currentDate));
