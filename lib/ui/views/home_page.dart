@@ -83,7 +83,7 @@ class HomePage extends HookWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.headline3,
+              style: Theme.of(context).textTheme.headline5,
             ),
           ],
         ),

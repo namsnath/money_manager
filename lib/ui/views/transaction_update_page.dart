@@ -425,7 +425,8 @@ class TransactionUpdatePage extends HookWidget {
       bottomNavigationBar: BottomNavigationBar(
         items: bottomNavTxnTypeItems,
         currentIndex: provider.selectedIndex,
-        onTap: (int index) => context.read(TransactionUpdateVm.provider).selectedIndex = index,
+        onTap: (int index) =>
+            context.read(TransactionUpdateVm.provider).selectedIndex = index,
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10),
