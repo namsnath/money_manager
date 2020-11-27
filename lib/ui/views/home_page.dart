@@ -17,15 +17,11 @@ class HomePage extends HookWidget {
     final accProvider = useProvider(DbProviders.accountsMasterProvider);
 
     final _accountTabs = accProvider.accountsList
-        .map(
-          (v) => Tab(text: '${v.account} (${v.institution})'),
-        )
+        .map((v) => Tab(text: '${v.account} (${v.institution})'))
         .toList();
 
     final _tabViews = accProvider.accountsList
-        .map(
-          (v) => AccountSummary(account: v),
-        )
+        .map((v) => AccountSummary(account: v))
         .toList();
 
     return DefaultTabController(
@@ -40,13 +36,9 @@ class HomePage extends HookWidget {
               onPressed: () => context.read(themeProvider).toggleTheme(),
             ),
           ],
-          bottom: TabBar(
-            tabs: _accountTabs,
-          ),
+          bottom: TabBar(tabs: _accountTabs),
         ),
-        body: TabBarView(
-          children: _tabViews,
-        ),
+        body: TabBarView(children: _tabViews),
         floatingActionButton: FloatingActionButton(
           onPressed: () => Navigator.push(
             context,
