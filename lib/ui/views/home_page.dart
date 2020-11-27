@@ -55,7 +55,6 @@ class HomePage extends HookWidget {
 }
 
 // Builds the Generic summary layout for the given account
-// TODO: [account] needs to be passed to the aggregate Future
 class AccountSummary extends HookWidget {
   AccountSummary({
     this.account,
@@ -66,6 +65,9 @@ class AccountSummary extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final txnProvider = useProvider(DbProviders.transactionProvider);
+    final accProvider = useProvider(DbProviders.accountsMasterProvider);
+    final selectedAccount = accProvider.accountsList
+        ?.elementAt(DefaultTabController.of(context).index);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10),
@@ -74,7 +76,7 @@ class AccountSummary extends HookWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FutureBuilder(
-              future: txnProvider.getAggregates(),
+              future: txnProvider.getAggregates(account: selectedAccount),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   return SummaryDetails(data: snapshot.data);

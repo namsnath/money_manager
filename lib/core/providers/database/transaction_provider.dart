@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:money_manager/core/database/database.dart';
+import 'package:money_manager/core/models/database/account_master_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
 import 'package:money_manager/core/utils/datetime_util.dart';
 
@@ -12,22 +12,34 @@ class TransactionProvider extends ChangeNotifier {
   List<TransactionModel> _transactionList = [];
   List<TransactionModel> get transactionList => _transactionList;
 
-  String getAggregateQuery(int startTime, int endTime) => """
-    SELECT
-      COALESCE(SUM(${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
-      , COALESCE(SUM(${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
-    FROM ${TransactionModel.tableName}
-    WHERE
-      ${TransactionModel.colTransactionTime} >= $startTime
-      AND ${TransactionModel.colTransactionTime} <= $endTime
-  """;
+  String getAggregateQuery(
+      int startTime, int endTime, AccountMasterModel account) {
+    final baseQuery = """
+      SELECT
+        COALESCE(SUM(${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
+        , COALESCE(SUM(${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
+      FROM ${TransactionModel.tableName}
+      WHERE
+        ${TransactionModel.colTransactionTime} >= $startTime
+        AND ${TransactionModel.colTransactionTime} <= $endTime
+    """;
+
+    if (account == null) {
+      return baseQuery;
+    } else {
+      final accountFilterQuery =
+          'AND ${TransactionModel.colFkAccountId} = ${account.id}';
+
+      return baseQuery + accountFilterQuery;
+    }
+  }
 
   TransactionProvider() {
     // Initialise the state on Provider initialization
   }
 
   Future<Map<String, Map<String, double>>> getAggregates(
-      {DateTime date}) async {
+      {DateTime date, AccountMasterModel account}) async {
     final db = await dbProvider.database;
 
     if (date == null) {
@@ -54,41 +66,49 @@ class TransactionProvider extends ChangeNotifier {
       },
     };
 
-    List<Map<String, dynamic>> dayAggregate =
-        await db.rawQuery(getAggregateQuery(
-      DateTimeUtil.startOfDay(date).millisecondsSinceEpoch,
-      DateTimeUtil.endOfDay(date).millisecondsSinceEpoch,
-    ));
+    List<Map<String, dynamic>> dayAggregate = await db.rawQuery(
+      getAggregateQuery(
+        DateTimeUtil.startOfDay(date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfDay(date).millisecondsSinceEpoch,
+        account,
+      ),
+    );
     aggregate['credit']['day'] = dayAggregate[0]['creditAggregate'];
     aggregate['debit']['day'] = dayAggregate[0]['debitAggregate'];
     aggregate['balance']['day'] =
         aggregate['credit']['day'] - aggregate['debit']['day'];
 
-    List<Map<String, dynamic>> weekAggregate =
-        await db.rawQuery(getAggregateQuery(
-      DateTimeUtil.startOfWeek(date).millisecondsSinceEpoch,
-      DateTimeUtil.endOfWeek(date).millisecondsSinceEpoch,
-    ));
+    List<Map<String, dynamic>> weekAggregate = await db.rawQuery(
+      getAggregateQuery(
+        DateTimeUtil.startOfWeek(date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfWeek(date).millisecondsSinceEpoch,
+        account,
+      ),
+    );
     aggregate['credit']['week'] = weekAggregate[0]['creditAggregate'];
     aggregate['debit']['week'] = weekAggregate[0]['debitAggregate'];
     aggregate['balance']['week'] =
         aggregate['credit']['week'] - aggregate['debit']['week'];
 
-    List<Map<String, dynamic>> monthAggregate =
-        await db.rawQuery(getAggregateQuery(
-      DateTimeUtil.startOfMonth(date).millisecondsSinceEpoch,
-      DateTimeUtil.endOfMonth(date).millisecondsSinceEpoch,
-    ));
+    List<Map<String, dynamic>> monthAggregate = await db.rawQuery(
+      getAggregateQuery(
+        DateTimeUtil.startOfMonth(date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfMonth(date).millisecondsSinceEpoch,
+        account,
+      ),
+    );
     aggregate['credit']['month'] = monthAggregate[0]['creditAggregate'];
     aggregate['debit']['month'] = monthAggregate[0]['debitAggregate'];
     aggregate['balance']['month'] =
         aggregate['credit']['month'] - aggregate['debit']['month'];
 
-    List<Map<String, dynamic>> yearAggregate =
-        await db.rawQuery(getAggregateQuery(
-      DateTimeUtil.startOfYear(date).millisecondsSinceEpoch,
-      DateTimeUtil.endOfYear(date).millisecondsSinceEpoch,
-    ));
+    List<Map<String, dynamic>> yearAggregate = await db.rawQuery(
+      getAggregateQuery(
+        DateTimeUtil.startOfYear(date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfYear(date).millisecondsSinceEpoch,
+        account,
+      ),
+    );
     aggregate['credit']['year'] = yearAggregate[0]['creditAggregate'];
     aggregate['debit']['year'] = yearAggregate[0]['debitAggregate'];
     aggregate['balance']['year'] =
