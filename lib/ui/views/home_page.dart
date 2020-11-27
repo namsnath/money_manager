@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -6,6 +7,7 @@ import 'package:money_manager/core/models/database/account_master_model.dart';
 
 import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/core/providers/theme_provider.dart';
+import 'package:money_manager/core/utils/datetime_util.dart';
 import 'package:money_manager/ui/views/transaction_update_page.dart';
 
 class HomePage extends HookWidget {
@@ -102,14 +104,38 @@ class SummaryDetails extends StatelessWidget {
 
   final Map<String, Map<String, double>> data;
 
+  final todayFormat = DateFormat.yMMMEd();
+  final weekFormat = DateFormat.MMMEd();
+  final monthFormat = DateFormat.MMMEd();
+  final yearFormat = DateFormat.MMMEd();
+
   @override
   Widget build(BuildContext context) {
+    final currentDate = DateTime.now();
+
+    final today = todayFormat.format(currentDate);
+
+    final weekStart = weekFormat.format(DateTimeUtil.startOfWeek(currentDate));
+    final weekEnd = weekFormat.format(DateTimeUtil.endOfWeek(currentDate));
+
+    final monthStart = monthFormat.format(DateTimeUtil.startOfMonth(currentDate));
+    final monthEnd = monthFormat.format(DateTimeUtil.endOfMonth(currentDate));
+
+    final yearStart = yearFormat.format(DateTimeUtil.startOfYear(currentDate));
+    final yearEnd = yearFormat.format(DateTimeUtil.endOfYear(currentDate));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Today',
-          style: Theme.of(context).textTheme.headline5,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Today',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            Text(today),
+          ],
         ),
         Row(
           children: [
@@ -130,9 +156,16 @@ class SummaryDetails extends StatelessWidget {
             ),
           ],
         ),
-        Text(
-          'This Week',
-          style: Theme.of(context).textTheme.headline5,
+        SizedBox(height: 15.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'This Week',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            Text('$weekStart - $weekEnd'),
+          ],
         ),
         Row(
           children: [
@@ -153,9 +186,16 @@ class SummaryDetails extends StatelessWidget {
             ),
           ],
         ),
-        Text(
-          'This Month',
-          style: Theme.of(context).textTheme.headline5,
+        SizedBox(height: 15.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'This Month',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            Text('$monthStart - $monthEnd'),
+          ],
         ),
         Row(
           children: [
@@ -176,9 +216,16 @@ class SummaryDetails extends StatelessWidget {
             ),
           ],
         ),
-        Text(
-          'This Year',
-          style: Theme.of(context).textTheme.headline5,
+        SizedBox(height: 15.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'This Year',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            Text('$yearStart - $yearEnd'),
+          ],
         ),
         Row(
           children: [
