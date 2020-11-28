@@ -20,24 +20,28 @@ class TransactionUpdatePage extends HookWidget {
 
   final Logger log = Logger('TransactionUpdate');
 
-  final List<BottomNavigationBarItem> bottomNavTxnTypeItems = [
-    BottomNavigationBarItem(
+  final List<Tab> txnTypeTabs = [
+    Tab(
       icon: Icon(Icons.trending_up),
-      label: 'Income',
+      text: 'Income',
     ),
-    BottomNavigationBarItem(
+    Tab(
       icon: Icon(Icons.trending_down),
-      label: 'Expense',
+      text: 'Expense',
     ),
-    BottomNavigationBarItem(
+    Tab(
       icon: Icon(Icons.swap_horiz),
-      label: 'Transfer',
+      text: 'Transfer',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
+    final tabController = useTabController(initialLength: txnTypeTabs.length);
+    tabController.addListener(() {
+      context.read(TransactionUpdateVm.provider(initialAccount)).selectedIndex =
+          tabController.index;
+    });
 
     return ProviderScope(
       overrides: [
@@ -45,26 +49,27 @@ class TransactionUpdatePage extends HookWidget {
         initialAccountScopeProvider.overrideWithValue(initialAccount),
       ],
       child: Scaffold(
-        appBar: AppBar(),
-        bottomNavigationBar: BottomNavigationBar(
-          items: bottomNavTxnTypeItems,
-          currentIndex: provider.selectedIndex,
-          onTap: (int index) => context
-              .read(TransactionUpdateVm.provider(initialAccount))
-              .selectedIndex = index,
-        ),
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Center(
-            child: Form(
-              child: Column(
-                children: <Widget>[
-                  FieldsCard(),
-                  ActionButtons(),
-                ],
-              ),
-            ),
+        appBar: AppBar(
+          bottom: TabBar(
+            controller: tabController,
+            tabs: txnTypeTabs,
           ),
+        ),
+        body: TabBarView(
+          controller: tabController,
+          children: txnTypeTabs
+              .asMap() // Workaround to access index
+              .map(
+                (i, _) => MapEntry(
+                  i,
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: FieldsCard(selectedIndex: i),
+                  ),
+                ),
+              )
+              .values // Convert from MapEntry to List
+              .toList(),
         ),
       ),
     );
@@ -72,14 +77,17 @@ class TransactionUpdatePage extends HookWidget {
 }
 
 class FieldsCard extends HookWidget {
+  FieldsCard({
+    this.selectedIndex,
+  });
+
+  final int selectedIndex;
+
   @override
   Widget build(BuildContext context) {
-    final initialAccount = useProvider(initialAccountScopeProvider);
-    final provider = useProvider(TransactionUpdateVm.provider(initialAccount));
-
     Column fieldsColumn;
 
-    if (provider.selectedIndex == 0) {
+    if (selectedIndex == 0) {
       fieldsColumn = Column(
         children: [
           TimeButtons(),
@@ -87,9 +95,11 @@ class FieldsCard extends HookWidget {
           AmountField(),
           CategoryButton(),
           DescriptionField(),
+          SizedBox(height: 20),
+          ActionButtons(),
         ],
       );
-    } else if (provider.selectedIndex == 1) {
+    } else if (selectedIndex == 1) {
       fieldsColumn = Column(
         children: [
           TimeButtons(),
@@ -97,34 +107,36 @@ class FieldsCard extends HookWidget {
           AmountField(),
           CategoryButton(),
           DescriptionField(),
+          SizedBox(height: 20),
+          ActionButtons(),
         ],
       );
-    } else if (provider.selectedIndex == 2) {
+    } else if (selectedIndex == 2) {
       fieldsColumn = Column(
         children: [
           TimeButtons(),
           AccountDropdowns(transfer: true),
           AmountField(),
           DescriptionField(),
+          SizedBox(height: 20),
+          ActionButtons(),
         ],
       );
     }
 
-    return Expanded(
-      child: ListView(
-        children: [
-          Card(
-            margin: EdgeInsets.symmetric(vertical: 20),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 20,
-              ),
-              child: fieldsColumn,
+    return ListView(
+      children: [
+        Card(
+          margin: EdgeInsets.symmetric(vertical: 20),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 20,
+              horizontal: 20,
             ),
+            child: fieldsColumn,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -322,6 +334,7 @@ class AmountField extends HookWidget {
               labelText: 'Amount',
               errorText: provider.amount.error,
             ),
+            initialValue: provider.amount.value,
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.number,
             onChanged: (String value) {
@@ -357,6 +370,7 @@ class DescriptionField extends HookWidget {
               labelText: 'Description',
               errorText: provider.description.error,
             ),
+            initialValue: provider.description.value,
             textInputAction: TextInputAction.next,
             onChanged: (String value) {
               provider.setDescription(value);
