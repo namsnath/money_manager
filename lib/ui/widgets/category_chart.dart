@@ -1,6 +1,7 @@
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_breadcrumb/flutter_breadcrumb.dart';
 import 'dart:math' as math;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,30 +36,47 @@ class CategoryChartCard extends HookWidget {
     final parentIds = useState(<int>[0]);
     final parentNames = useState(<String>['All']);
 
-    _changeId(int val, int parentVal, String parentName) {
-      selectedId.value = val;
-      parentIds.value.add(parentVal);
+    _changeId(int currentId, String parentName) {
+      selectedId.value = currentId;
+      parentIds.value.add(currentId);
       parentNames.value.add(parentName);
-    }
-
-    _goUp() {
-      if (parentIds.value.length > 1) {
-        selectedId.value = parentIds.value.removeLast();
-        parentNames.value.removeLast();
-      }
     }
 
     return Card(
       child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FlatButton.icon(
-                icon: Icon(Icons.keyboard_arrow_left),
-                label: Text(parentNames.value.last),
-                onPressed: parentIds.value.length > 1 ? _goUp : null,
+              BreadCrumb.builder(
+                itemCount: parentIds.value.length,
+                builder: (index) => BreadCrumbItem(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 5.0,
+                      horizontal: 10.0,
+                    ),
+                    content: Text(
+                      parentNames.value[index],
+                      style: TextStyle(
+                        fontWeight: index == parentIds.value.length - 1
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () {
+                      if (parentIds.value.length - 1 == index) return;
+
+                      selectedId.value = parentIds.value[index];
+                      parentIds.value = parentIds.value.sublist(0, index + 1);
+                      parentNames.value =
+                          parentNames.value.sublist(0, index + 1);
+                    }),
+                divider: Icon(Icons.chevron_right),
               ),
             ],
+          ),
+          SizedBox(
+            height: 20.0,
           ),
           SizedBox(
             height: 250.0,
@@ -168,7 +186,6 @@ class CategoryChart extends HookWidget {
 
               changeId(
                 int.parse(selectedDatum['currentId']),
-                int.parse(selectedDatum['parentId']),
                 selectedDatum['category'],
               );
 
