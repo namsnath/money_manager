@@ -85,20 +85,10 @@ class CategoryChartCard extends HookWidget {
           Divider(
             thickness: 2.0,
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 30.0,
-            ),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height / 4,
-              width: double.infinity,
-              child: CategoryChart(
-                account: account,
-                parentId: selectedId.value,
-                changeId: _changeId,
-              ),
-            ),
+          CategoryChart(
+            account: account,
+            parentId: selectedId.value,
+            changeId: _changeId,
           ),
         ],
       ),
@@ -135,7 +125,6 @@ class CategoryChart extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final selectedCatId = useState(57);
     final futureProvider = useProvider(
       futureQuery(
         CategoryAggregateData(
@@ -151,8 +140,8 @@ class CategoryChart extends HookWidget {
       child: CircularProgressIndicator(),
     );
 
-    if (futureProvider.data != null) {
-      child = charts.PieChart(
+    if (futureProvider.data != null && futureProvider.data.value.isNotEmpty) {
+      final chart = charts.PieChart(
         [
           charts.Series(
             id: 'chart',
@@ -205,8 +194,20 @@ class CategoryChart extends HookWidget {
           ),
         ],
       );
+
+      child = SizedBox(
+        height: MediaQuery.of(context).size.height / 4,
+        width: double.infinity,
+        child: chart,
+      );
     }
 
-    return child;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 20.0,
+        vertical: 30.0,
+      ),
+      child: child,
+    );
   }
 }
