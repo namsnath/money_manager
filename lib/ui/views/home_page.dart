@@ -25,13 +25,15 @@ class HomePage extends HookWidget {
 
     final _tabViews = accProvider.accountsList
         .map(
-          (v) => Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
-            child: Column(
-              children: [
-                AccountSummary(account: v),
-                CategoryChartCard(account: v),
-              ],
+          (v) => SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              child: Column(
+                children: [
+                  AccountSummary(account: v),
+                  CategoryChartCard(account: v),
+                ],
+              ),
             ),
           ),
         )
@@ -87,26 +89,23 @@ class AccountSummary extends HookWidget {
     final selectedAccount = accProvider.accountsList
         ?.elementAt(DefaultTabController.of(context).index);
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FutureBuilder(
-              future: txnProvider.getAggregates(account: selectedAccount),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return SummaryDetails(data: snapshot.data);
-                } else if (snapshot.hasError) {
-                  return Text('Error');
-                } else {
-                  return CircularProgressIndicator();
-                }
-              },
-            ),
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FutureBuilder(
+            future: txnProvider.getAggregates(account: selectedAccount),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return SummaryDetails(data: snapshot.data);
+              } else if (snapshot.hasError) {
+                return Text('Error');
+              } else {
+                return CircularProgressIndicator();
+              }
+            },
+          ),
+        ],
       ),
     );
   }

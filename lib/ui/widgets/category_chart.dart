@@ -45,46 +45,59 @@ class CategoryChartCard extends HookWidget {
     return Card(
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              BreadCrumb.builder(
-                itemCount: parentIds.value.length,
-                builder: (index) => BreadCrumbItem(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 5.0,
-                      horizontal: 10.0,
-                    ),
-                    content: Text(
-                      parentNames.value[index],
-                      style: TextStyle(
-                        fontWeight: index == parentIds.value.length - 1
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+          Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 10.0,
+              horizontal: 20.0,
+            ),
+            child: Row(
+              children: [
+                Text('Category: '),
+                BreadCrumb.builder(
+                  itemCount: parentIds.value.length,
+                  builder: (index) => BreadCrumbItem(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 5.0,
+                        horizontal: 5.0,
                       ),
-                    ),
-                    onTap: () {
-                      if (parentIds.value.length - 1 == index) return;
+                      content: Text(
+                        parentNames.value[index],
+                        style: TextStyle(
+                          fontWeight: index == parentIds.value.length - 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      onTap: () {
+                        if (parentIds.value.length - 1 == index) return;
 
-                      selectedId.value = parentIds.value[index];
-                      parentIds.value = parentIds.value.sublist(0, index + 1);
-                      parentNames.value =
-                          parentNames.value.sublist(0, index + 1);
-                    }),
-                divider: Icon(Icons.chevron_right),
+                        selectedId.value = parentIds.value[index];
+                        parentIds.value = parentIds.value.sublist(0, index + 1);
+                        parentNames.value =
+                            parentNames.value.sublist(0, index + 1);
+                      }),
+                  divider: Icon(Icons.chevron_right),
+                  overflow: ScrollableOverflow(),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            thickness: 2.0,
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 30.0,
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height / 4,
+              width: double.infinity,
+              child: CategoryChart(
+                account: account,
+                parentId: selectedId.value,
+                changeId: _changeId,
               ),
-            ],
-          ),
-          SizedBox(
-            height: 20.0,
-          ),
-          SizedBox(
-            height: 250.0,
-            width: MediaQuery.of(context).size.width,
-            child: CategoryChart(
-              account: account,
-              parentId: selectedId.value,
-              changeId: _changeId,
             ),
           ),
         ],
@@ -93,7 +106,7 @@ class CategoryChartCard extends HookWidget {
   }
 }
 
-// TODO: Fix chart overflowing Card
+// TODO: Fix chart overflowing Card (Reduced chart size for now)
 class CategoryChart extends HookWidget {
   final AccountMasterModel account;
   final int parentId;
@@ -150,7 +163,7 @@ class CategoryChart extends HookWidget {
             //     Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
             //         .withOpacity(1.0)),
             labelAccessorFn: (value, _) =>
-                '${value['category']} ${value['debitAggregate']}',
+                '${value['category']}\n(${value['debitAggregate']})',
           ),
         ],
         animate: true,
@@ -160,7 +173,7 @@ class CategoryChart extends HookWidget {
         defaultRenderer: new charts.ArcRendererConfig(
           arcWidth: 40,
           arcRendererDecorators: [
-            new charts.ArcLabelDecorator(
+            charts.ArcLabelDecorator(
               outsideLabelStyleSpec: charts.TextStyleSpec(
                 color: charts.ColorUtil.fromDartColor(
                     Theme.of(context).textTheme.bodyText1.color),
@@ -170,7 +183,7 @@ class CategoryChart extends HookWidget {
                 color: charts.ColorUtil.fromDartColor(
                     Theme.of(context).textTheme.bodyText1.color),
                 thickness: 1.0,
-                length: 15.0,
+                length: 20.0,
               ),
               labelPosition: charts.ArcLabelPosition.outside,
             ),
@@ -188,10 +201,6 @@ class CategoryChart extends HookWidget {
                 int.parse(selectedDatum['currentId']),
                 selectedDatum['category'],
               );
-
-              // final int id = int.parse(selectedDatum[0].datum['currentId']);
-              // selectedCatId.value = id;
-              // print(id);
             },
           ),
         ],
