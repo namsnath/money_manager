@@ -1,5 +1,3 @@
-import 'package:charts_flutter/flutter.dart' as charts;
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -11,6 +9,7 @@ import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/core/providers/theme_provider.dart';
 import 'package:money_manager/core/utils/datetime_util.dart';
 import 'package:money_manager/ui/views/transaction_update_page.dart';
+import 'package:money_manager/ui/widgets/category_chart.dart';
 
 class HomePage extends HookWidget {
   const HomePage({Key key}) : super(key: key);
@@ -31,7 +30,7 @@ class HomePage extends HookWidget {
             child: Column(
               children: [
                 AccountSummary(account: v),
-                CategoryChart(account: v),
+                CategoryChartCard(account: v),
               ],
             ),
           ),
@@ -68,86 +67,6 @@ class HomePage extends HookWidget {
             child: Icon(Icons.add),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// TODO: Add TxnType Picker
-// TODO: Fix chart overflowing Card
-class CategoryChart extends HookWidget {
-  final AccountMasterModel account;
-
-  CategoryChart({
-    this.account,
-  });
-
-  final futureQuery = FutureProvider.autoDispose
-      .family<List<Map<String, dynamic>>, AccountMasterModel>((ref, acc) async {
-    final catProvider = ref.watch(DbProviders.categoryProvider);
-    final txnProvider = ref.watch(DbProviders.transactionProvider);
-
-    return await txnProvider.getCategoryAggregate(
-      startTime:
-          DateTimeUtil.startOfMonth(DateTime.now()).millisecondsSinceEpoch,
-      endTime: DateTimeUtil.endOfMonth(DateTime.now()).millisecondsSinceEpoch,
-      categoryHierarchy: catProvider?.categoryHierarchy ?? [],
-      account: acc,
-    );
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final futureProvider = useProvider(futureQuery(account));
-
-    Widget child = CircularProgressIndicator();
-
-    if (futureProvider.data != null) {
-      child = charts.PieChart(
-        [
-          charts.Series(
-            id: 'chart',
-            data: futureProvider.data.value,
-            domainFn: (value, _) => value['category'],
-            measureFn: (value, _) => value['debitAggregate'],
-            // colorFn: (value, _) => charts.ColorUtil.fromDartColor(
-            //     Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-            //         .withOpacity(1.0)),
-            labelAccessorFn: (value, _) =>
-                '${value['category']} ${value['debitAggregate']}',
-          ),
-        ],
-        animate: true,
-        behaviors: [
-          // charts.DatumLegend(),
-        ],
-        defaultRenderer: new charts.ArcRendererConfig(
-          arcWidth: 40,
-          arcRendererDecorators: [
-            new charts.ArcLabelDecorator(
-              outsideLabelStyleSpec: charts.TextStyleSpec(
-                color: charts.ColorUtil.fromDartColor(
-                    Theme.of(context).textTheme.bodyText1.color),
-                fontSize: 12,
-              ),
-              leaderLineStyleSpec: charts.ArcLabelLeaderLineStyleSpec(
-                color: charts.ColorUtil.fromDartColor(
-                    Theme.of(context).textTheme.bodyText1.color),
-                thickness: 1.0,
-                length: 15.0,
-              ),
-              labelPosition: charts.ArcLabelPosition.outside,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Card(
-      child: SizedBox(
-        height: 250.0,
-        width: MediaQuery.of(context).size.width,
-        child: child,
       ),
     );
   }
@@ -344,6 +263,7 @@ class SummaryDetails extends StatelessWidget {
             ),
           ],
         ),
+        SizedBox(height: 15.0),
       ],
     );
   }

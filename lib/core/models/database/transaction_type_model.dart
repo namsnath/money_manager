@@ -21,7 +21,7 @@ class TransactionTypeModel with EquatableMixin {
   final int id;
   final String transactionType;
 
-  TransactionTypeModel({this.id, this.transactionType});
+  const TransactionTypeModel({this.id, this.transactionType});
 
   factory TransactionTypeModel.fromDatabaseJson(Map<String, dynamic> data) {
     return TransactionTypeModel(

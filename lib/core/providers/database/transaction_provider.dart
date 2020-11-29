@@ -2,9 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 import 'package:money_manager/core/database/database.dart';
 import 'package:money_manager/core/models/database/account_master_model.dart';
-import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
-import 'package:money_manager/core/models/database/transaction_type_model.dart';
 import 'package:money_manager/core/utils/datetime_util.dart';
 
 class TransactionProvider extends ChangeNotifier {
@@ -33,83 +31,6 @@ class TransactionProvider extends ChangeNotifier {
           'AND ${TransactionModel.colFkAccountId} = ${account.id}';
 
       return baseQuery + accountFilterQuery;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getCategoryAggregate({
-    @required int startTime,
-    @required int endTime,
-    AccountMasterModel account,
-    TransactionTypeModel txnType,
-    @required List<Map<String, dynamic>> categoryHierarchy,
-  }) async {
-    if (categoryHierarchy == null || categoryHierarchy.isEmpty) {
-      return Future.delayed(Duration(seconds: 0), () => []);
-    }
-
-    final db = await dbProvider.database;
-
-    Map<int, Map<String, dynamic>> categoryParentDetails = {};
-
-    categoryHierarchy.map((v) {
-      final int parentId = v['iTreeID1'];
-      final String parentName = v['iTree1'];
-
-      if (categoryParentDetails.containsKey(parentId)) {
-        categoryParentDetails[parentId]['children']
-            .add(v['${CategoryModel.colId}']);
-      } else {
-        categoryParentDetails[parentId] = {
-          'children': <int>[v['${CategoryModel.colId}']],
-          'parentName': parentName,
-        };
-      }
-    }).toList();
-
-    String groupCases = categoryParentDetails
-        .map((k, v) {
-          return MapEntry(k,
-              'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN $k');
-        })
-        .values
-        .join(' ');
-
-    String selectCategoryCases = categoryParentDetails
-        .map((k, v) {
-          return MapEntry(k,
-              'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN "${v['parentName']}"');
-        })
-        .values
-        .join(' ');
-
-    String accountFilterQuery = '';
-    if (account != null) {
-      accountFilterQuery =
-          'AND ${TransactionModel.colFkAccountId} = ${account.id}';
-    }
-
-    final query = """
-      SELECT
-        COALESCE(SUM(t.${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
-        , COALESCE(SUM(t.${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
-        , COALESCE(CASE $selectCategoryCases END, "Uncategorised") as category
-      FROM ${TransactionModel.tableName} t
-      LEFT JOIN ${CategoryModel.tableName} c
-        ON t.${TransactionModel.colFkCategoryId} = c.${CategoryModel.colId}
-      WHERE
-        t.${TransactionModel.colTransactionTime} >= $startTime
-        AND t.${TransactionModel.colTransactionTime} <= $endTime
-        AND t.${TransactionModel.colFkTransactionTypeId} = ${txnType?.id ?? 2}
-        $accountFilterQuery
-      GROUP BY CASE $groupCases ELSE 0 END
-    """;
-
-    try {
-      return await db.rawQuery(query);
-    } catch (err) {
-      log.severe(err);
-      log.warning(categoryHierarchy);
-      return Future.delayed(Duration(seconds: 0), () => []);
     }
   }
 
