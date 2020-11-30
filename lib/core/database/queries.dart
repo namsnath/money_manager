@@ -5,6 +5,7 @@ import 'package:money_manager/core/models/database/account_master_model.dart';
 import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
+import 'package:money_manager/core/models/queries/category_aggregate_query_data.dart';
 import 'package:money_manager/core/models/queries/category_hierarchy_model.dart';
 import 'package:money_manager/core/models/queries/category_level_data.dart';
 
@@ -86,7 +87,7 @@ class Queries {
   static final log = Logger('Queries');
   static final dbProvider = DatabaseHelper.dbProvider;
 
-  static Future<List<Map<String, dynamic>>> getCategoryAggregate({
+  static Future<List<CategoryAggregateQueryData>> getCategoryAggregate({
     @required int startTime,
     @required int endTime,
     AccountMasterModel account,
@@ -154,12 +155,12 @@ class Queries {
 
     final query = """
       SELECT
-        COALESCE(SUM(t.${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
-        , COALESCE(SUM(t.${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
-        , CASE $selectCategoryNameCases ELSE "Uncategorised" END as category
-        , CASE $selectParentCatIdCases ELSE 0 END as parentId
-        , CASE $selectCurrentIdCases ELSE 0 END as currentId
-        , CASE $selectChildrenCount ELSE 0 END as childrenCount
+        COALESCE(SUM(t.${TransactionModel.colDebitAmount}), 0.0) as debitSum
+        , COALESCE(SUM(t.${TransactionModel.colCreditAmount}), 0.0) as creditSum
+        , CAST(CASE $selectCategoryNameCases ELSE "Uncategorised" END AS TEXT) as category
+        , CAST(CASE $selectParentCatIdCases ELSE 0 END AS INTEGER) as parentId
+        , CAST(CASE $selectCurrentIdCases ELSE 0 END AS INTEGER) as currentId
+        , CAST(CASE $selectChildrenCount ELSE 0 END AS INTEGER) as childrenCount
       FROM ${TransactionModel.tableName} t
       LEFT JOIN ${CategoryModel.tableName} c
         ON t.${TransactionModel.colFkCategoryId} = c.${CategoryModel.colId}
@@ -173,7 +174,8 @@ class Queries {
     """;
 
     try {
-      return await db.rawQuery(query);
+      final results = await db.rawQuery(query);
+      return results.map((item) => CategoryAggregateQueryData.fromDatabaseJson(item)).toList();
     } catch (err) {
       log.severe(err);
       log.warning(categoryHierarchy);

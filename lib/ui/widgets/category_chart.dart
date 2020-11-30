@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:money_manager/core/database/queries.dart';
 import 'package:money_manager/core/models/database/account_master_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
+import 'package:money_manager/core/models/queries/category_aggregate_query_data.dart';
 import 'package:money_manager/core/providers/database/providers.dart';
 import 'package:money_manager/core/utils/datetime_util.dart';
 
@@ -109,7 +110,7 @@ class CategoryChart extends HookWidget {
   });
 
   final futureQuery = FutureProvider.autoDispose
-      .family<List<Map<String, dynamic>>, CategoryAggregateData>(
+      .family<List<CategoryAggregateQueryData>, CategoryAggregateData>(
           (ref, data) async {
     final catProvider = ref.watch(DbProviders.categoryProvider);
 
@@ -141,18 +142,20 @@ class CategoryChart extends HookWidget {
     );
 
     if (futureProvider.data != null && futureProvider.data.value.isNotEmpty) {
+
+      futureProvider.data.value.map((v) => print('${v.category}, ${v.debitSum}')).toList();
       final chart = charts.PieChart(
         [
-          charts.Series(
+          charts.Series<CategoryAggregateQueryData, dynamic>(
             id: 'chart',
             data: futureProvider.data.value,
-            domainFn: (value, _) => value['category'],
-            measureFn: (value, _) => value['debitAggregate'],
+            domainFn: (value, _) => value.category,
+            measureFn: (value, _) => value.debitSum,
             // colorFn: (value, _) => charts.ColorUtil.fromDartColor(
             //     Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
             //         .withOpacity(1.0)),
             labelAccessorFn: (value, _) =>
-                '${value['category']}\n(${value['debitAggregate']})',
+                '${value.category}\n(${value.debitSum})',
           ),
         ],
         animate: true,
@@ -183,12 +186,12 @@ class CategoryChart extends HookWidget {
             type: charts.SelectionModelType.info,
             changedListener: (model) {
               final selectedDatum = model.selectedDatum[0].datum;
-              final childrenCount = selectedDatum['childrenCount'];
+              final childrenCount = selectedDatum.childrenCount;
               if (childrenCount == 0) return;
 
               changeId(
-                int.parse(selectedDatum['currentId']),
-                selectedDatum['category'],
+                selectedDatum.currentId,
+                selectedDatum.category,
               );
             },
           ),
