@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_treeview/tree_view.dart';
-import 'package:hooks_riverpod/all.dart';
 import 'package:logging/logging.dart';
 import 'package:money_manager/core/database/database.dart';
 import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
+import 'package:money_manager/core/models/queries/category_hierarchy_model.dart';
 
 class CategoryProvider extends ChangeNotifier {
   final log = Logger('CategoryProvider');
@@ -61,10 +61,10 @@ class CategoryProvider extends ChangeNotifier {
 			WHERE LevelParent.iLevel < 10
                 AND LevelCurr.${CategoryModel.colFkSelfParentId} > 0)
 
-	SELECT CTE.${CategoryModel.colId}
-			, CTE.${CategoryModel.colFkSelfParentId}
-      , CTE.${CategoryModel.colFkTransactionTypeId}
-      , t.${TransactionTypeModel.colTransactionType} as TxnType
+	SELECT CTE.${CategoryModel.colId} as id
+			, CTE.${CategoryModel.colFkSelfParentId} as parentId
+      , CTE.${CategoryModel.colFkTransactionTypeId} as transactionTypeId
+      , t.${TransactionTypeModel.colTransactionType} as transactionType
       , CTE.${CategoryModel.colCategory} as categoryName
 			, CAST(CTE.iLevel + 1 AS INTEGER) AS iLevel
 			, CAST((SELECT COUNT(*) FROM ${CategoryModel.tableName} mA WHERE mA.${CategoryModel.colFkSelfParentId} = CTE.${CategoryModel.colId}) AS INTEGER) AS iChildren
@@ -119,8 +119,8 @@ class CategoryProvider extends ChangeNotifier {
   List<CategoryModel> _categoryList = [];
   List<CategoryModel> get categoryList => _categoryList;
 
-  List<Map<String, dynamic>> _categoryHierarchy = [];
-  List<Map<String, dynamic>> get categoryHierarchy => _categoryHierarchy;
+  List<CategoryHierarchyModel> _categoryHierarchy = [];
+  List<CategoryHierarchyModel> get categoryHierarchy => _categoryHierarchy;
 
   Map<int, String> _categoryHierarchyMap = {};
   Map<int, String> get categoryHierarchyMap => _categoryHierarchyMap;
@@ -132,6 +132,7 @@ class CategoryProvider extends ChangeNotifier {
 
   Future getAllCategories() async {
     final db = await dbProvider.database;
+    Map<int, String> categoryMap = {};
 
     List<Map<String, dynamic>> allCategoriesResult =
         await db.query(CategoryModel.tableName, columns: CategoryModel.columns);
@@ -144,28 +145,17 @@ class CategoryProvider extends ChangeNotifier {
 
     List<Map<String, dynamic>> categoryHierarchyResult =
         await db.rawQuery(getHierarchyQuery());
-    Map<int, String> categoryMap = {};
 
-    categoryHierarchyResult = categoryHierarchyResult.map((v) {
-      Map<String, dynamic> temp = Map<String, dynamic>.from(v);
-
-      List<String> categories = [];
-
-      for (int j = 1; j <= 10; j++) {
-        if (temp['iTree$j'] != null)
-          categories.add(temp['iTree$j']);
-        else
-          break;
-      }
-
-      temp['categoryDisplayName'] = categories.join(':');
-      categoryMap[temp['id']] = temp['categoryDisplayName'];
-
-      return temp;
-    }).toList();
+    List<CategoryHierarchyModel> catHierarchy = categoryHierarchyResult.map(
+      (item) {
+        final obj = CategoryHierarchyModel.fromDatabaseJson(item);
+        categoryMap[obj.id] = obj.categoryDisplayName;
+        return obj;
+      },
+    ).toList();
 
     this._categoryList = accounts;
-    this._categoryHierarchy = categoryHierarchyResult;
+    this._categoryHierarchy = catHierarchy;
     this._categoryHierarchyMap = categoryMap;
 
     notifyListeners();
@@ -201,12 +191,11 @@ class CategoryProvider extends ChangeNotifier {
 
     for (int i = 0; i < _categoryHierarchy.length; i++) {
       var current = _categoryHierarchy[i];
-      if (current[CategoryModel.colFkTransactionTypeId] != transactionTypeId)
-        continue;
+      if (current.transactionTypeId != transactionTypeId) continue;
 
-      var currentId = current[CategoryModel.colId];
-      var level = current['iLevel'];
-      var categoryName = current['iTree$level'];
+      var currentId = current.id;
+      var level = current.iLevel;
+      var categoryName = current.iTree[level - 1];
 
       var newNode = Node(
         label: categoryName,
@@ -219,14 +208,14 @@ class CategoryProvider extends ChangeNotifier {
       } else {
         // Find index in tree corresponding to key indicated for first level
         var index = tree
-            .indexWhere((node) => node.key == current['iTreeID1'].toString());
+            .indexWhere((node) => node.key == current.iTreeID[0].toString());
         // Set parent node to found index
         var parentNode = tree[index];
 
         for (int j = 2; j < level; j++) {
           // Find index in children of Node for the key indicated in the Jth level
           var index = parentNode?.children?.indexWhere(
-              (node) => node.key == current['iTreeID$j'].toString());
+              (node) => node.key == current.iTreeID[j - 1].toString());
           // Set parent node to found index
           parentNode = parentNode?.children[index];
         }

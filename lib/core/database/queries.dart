@@ -5,21 +5,37 @@ import 'package:money_manager/core/models/database/account_master_model.dart';
 import 'package:money_manager/core/models/database/category_model.dart';
 import 'package:money_manager/core/models/database/transaction_model.dart';
 import 'package:money_manager/core/models/database/transaction_type_model.dart';
+import 'package:money_manager/core/models/queries/category_hierarchy_model.dart';
+import 'package:money_manager/core/models/queries/category_level_data.dart';
 
 class CategoryAggregates {
-  static getLevelDetails({
-    @required List<Map<String, dynamic>> categoryHierarchy,
+  /// Gets children data from the given [categoryHierarchy] and [parentId].
+  ///
+  /// [categoryHierarchy] is usually from [CategoryProvider.categoryHierarchy].
+  /// [parentId] is the highest-level parent to use for getting details.
+  /// Categories outside of this tree will be ignored. Defaults to 0.
+  ///
+  /// [CategoryLevelData.children] includes the parent and all its children.
+  static Map<int, CategoryLevelData> getLevelDetails({
+    @required List<CategoryHierarchyModel> categoryHierarchy,
     int parentId = 0,
   }) {
-    Map<int, Map<String, dynamic>> categoryParentDetails = {};
+    Map<int, CategoryLevelData> categoryLevelDetails = {};
 
-    int reqdLevel = 1;
+    // Reqd Level would be the first one by default (no parent).
+    int reqdLevel = 0;
+
+    // If parent is not 0, it has a valid parent.
     if (parentId != 0) {
-      reqdLevel = categoryHierarchy.firstWhere(
-            (v) => v['id'] == parentId,
-            orElse: () => {'iLevel': 0},
-          )['iLevel'] +
-          1;
+      // Find the parent category.
+      final reqdItem = categoryHierarchy.firstWhere(
+        (v) => v.id == parentId,
+        // Return a placeholder with iLevel = 1.
+        orElse: () => CategoryHierarchyModel(iLevel: 1),
+      );
+
+      // Required level is the iLevel of the parent.
+      reqdLevel = reqdItem.iLevel;
     }
 
     categoryHierarchy.map((v) {
@@ -27,43 +43,42 @@ class CategoryAggregates {
       String currentName;
       int currentParentId = parentId;
 
-      if (v['id'] == parentId) {
-        currentId = v['id'];
-        currentName = v['categoryName'];
+      // If the current category is the parent.
+      if (v.id == parentId) {
+        currentId = v.id;
+        currentName = v.category;
 
-        // If current category is the parent category, get it's parent
-        final int parentParentLevel = v['iLevel'] - 1;
-        currentParentId = v['iTreeID$parentParentLevel'] ?? 0;
+        // If current category is the parent category, get it's parent.
+        final int parentParentLevel = v.iLevel;
+        currentParentId = v.iTreeID[parentParentLevel] ?? 0;
       } else if (currentParentId != 0 &&
-          v['iTreeID${reqdLevel - 1}'] != currentParentId)
+          v.iTreeID[reqdLevel - 1] != currentParentId) {
+        // The category does not belong under the current parent.
+        // Parent id not 0 => Not top-level, and has a parent (so that next condition doesnt error).
+        // iTreeID[reqdLevel - 1] not equal to parentID => does not belong in this tree.
         return;
-      else {
-        currentId = v['iTreeID$reqdLevel'];
-        currentName = v['iTree$reqdLevel'];
-      }
-
-      if (currentId == null) {
-        if (v['id'] == currentParentId) {
-          currentId = v['id'];
-          currentName = v['categoryName'];
-        } else
-          return;
-      }
-
-      if (categoryParentDetails.containsKey(currentId)) {
-        categoryParentDetails[currentId]['children']
-            .add(v['${CategoryModel.colId}']);
       } else {
-        categoryParentDetails[currentId] = {
-          'parentId': currentParentId,
-          'currentId': currentId,
-          'currentName': currentName,
-          'children': <int>[v['${CategoryModel.colId}']],
-        };
+        // Category is a valid child.
+        // Get appropriate data.
+        currentId = v.iTreeID[reqdLevel];
+        currentName = v.iTree[reqdLevel];
+      }
+
+      // If the currentId exists in the map, add currentId to it's children.
+      if (categoryLevelDetails.containsKey(currentId)) {
+        categoryLevelDetails[currentId].children.add(v.id);
+      } else {
+        // If currentId not present, initialise the data.
+        categoryLevelDetails[currentId] = CategoryLevelData(
+          parentId: currentParentId,
+          currentId: currentId,
+          currentName: currentName,
+          children: <int>[v.id],
+        );
       }
     }).toList();
 
-    return categoryParentDetails;
+    return categoryLevelDetails;
   }
 }
 
@@ -76,7 +91,7 @@ class Queries {
     @required int endTime,
     AccountMasterModel account,
     TransactionTypeModel txnType,
-    @required List<Map<String, dynamic>> categoryHierarchy,
+    @required List<CategoryHierarchyModel> categoryHierarchy,
     int parentId = 0,
   }) async {
     if (categoryHierarchy == null || categoryHierarchy.isEmpty) {
@@ -85,44 +100,44 @@ class Queries {
 
     final db = await dbProvider.database;
 
-    final categoryParentDetails = CategoryAggregates.getLevelDetails(
+    final categoryLevelDetails = CategoryAggregates.getLevelDetails(
       categoryHierarchy: categoryHierarchy,
       parentId: parentId,
     );
 
-    String groupCases = categoryParentDetails
+    String groupCases = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN $k'))
+            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')}) THEN $k'))
         .values
         .join(' ');
 
-    String selectCategoryNameCases = categoryParentDetails
+    String selectCategoryNameCases = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN "${v['currentName']}"'))
+            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')}) THEN "${v.currentName}"'))
         .values
         .join(' ');
 
-    String selectParentCatIdCases = categoryParentDetails
+    String selectParentCatIdCases = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN "${v['parentId']}"'))
+            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')}) THEN "${v.parentId}"'))
         .values
         .join(' ');
 
-    String selectCurrentIdCases = categoryParentDetails
+    String selectCurrentIdCases = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN "${v['currentId']}"'))
+            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')}) THEN "${v.currentId}"'))
         .values
         .join(' ');
 
-    String selectChildrenCount = categoryParentDetails
+    String selectChildrenCount = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')}) THEN ${v['children'].length - 1}'))
+            'WHEN t.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')}) THEN ${v.children.length - 1}'))
         .values
         .join(' ');
 
-    String categoryFilterQuery = categoryParentDetails
+    String categoryFilterQuery = categoryLevelDetails
         .map((k, v) => MapEntry(k,
-            't.${TransactionModel.colFkCategoryId} IN (${v['children'].join(',')})'))
+            't.${TransactionModel.colFkCategoryId} IN (${v.children.join(',')})'))
         .values
         .join(' OR ');
 

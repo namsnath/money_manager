@@ -117,7 +117,7 @@ class CategoryChart extends HookWidget {
       startTime:
           DateTimeUtil.startOfMonth(DateTime.now()).millisecondsSinceEpoch,
       endTime: DateTimeUtil.endOfMonth(DateTime.now()).millisecondsSinceEpoch,
-      categoryHierarchy: catProvider?.categoryHierarchy ?? [],
+      categoryHierarchy: catProvider.categoryHierarchy,
       account: data.account,
       parentId: data.parentId,
     );
