@@ -132,14 +132,19 @@ class Queries {
           'AND ${TransactionModel.colFkAccountId} = ${account.id}';
     }
 
+    String uncategorisedFilterQuery = '';
+    if (parentId == 0) {
+      uncategorisedFilterQuery = 'OR t.${TransactionModel.colFkCategoryId} = 0';
+    }
+
     final query = """
       SELECT
         COALESCE(SUM(t.${TransactionModel.colDebitAmount}), 0.0) as debitAggregate
         , COALESCE(SUM(t.${TransactionModel.colCreditAmount}), 0.0) as creditAggregate
-        , COALESCE(CASE $selectCategoryNameCases END, "Uncategorised") as category
-        , CASE $selectParentCatIdCases END as parentId
-        , CASE $selectCurrentIdCases END as currentId
-        , CASE $selectChildrenCount END as childrenCount
+        , CASE $selectCategoryNameCases ELSE "Uncategorised" END as category
+        , CASE $selectParentCatIdCases ELSE 0 END as parentId
+        , CASE $selectCurrentIdCases ELSE 0 END as currentId
+        , CASE $selectChildrenCount ELSE 0 END as childrenCount
       FROM ${TransactionModel.tableName} t
       LEFT JOIN ${CategoryModel.tableName} c
         ON t.${TransactionModel.colFkCategoryId} = c.${CategoryModel.colId}
@@ -147,7 +152,7 @@ class Queries {
         t.${TransactionModel.colFkTransactionTypeId} = ${txnType?.id ?? 2}
         AND t.${TransactionModel.colTransactionTime} >= $startTime
         AND t.${TransactionModel.colTransactionTime} <= $endTime
-        AND ($categoryFilterQuery)
+        AND ($categoryFilterQuery $uncategorisedFilterQuery)
         $accountFilterQuery
       GROUP BY (CASE $groupCases ELSE 0 END)
     """;
