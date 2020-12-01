@@ -97,10 +97,8 @@ class CategoryChartCard extends HookWidget {
           CategoryChart(
             account: account,
             parentId: selectedId.value,
-            startTime: DateTimeUtil.startOfMonth(DateTime.now())
-                .millisecondsSinceEpoch,
-            endTime:
-                DateTimeUtil.endOfMonth(DateTime.now()).millisecondsSinceEpoch,
+            startTime: DateTimeUtil.startOfMonth().millisecondsSinceEpoch,
+            endTime: DateTimeUtil.endOfMonth().millisecondsSinceEpoch,
             changeId: _changeId,
           ),
         ],

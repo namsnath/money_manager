@@ -130,15 +130,15 @@ class SummaryDetails extends StatelessWidget {
 
     final today = todayFormat.format(currentDate);
 
-    final weekStart = weekFormat.format(DateTimeUtil.startOfWeek(currentDate));
-    final weekEnd = weekFormat.format(DateTimeUtil.endOfWeek(currentDate));
+    final weekStart = weekFormat.format(DateTimeUtil.startOfWeek(date: currentDate));
+    final weekEnd = weekFormat.format(DateTimeUtil.endOfWeek(date: currentDate));
 
     final monthStart =
-        monthFormat.format(DateTimeUtil.startOfMonth(currentDate));
-    final monthEnd = monthFormat.format(DateTimeUtil.endOfMonth(currentDate));
+        monthFormat.format(DateTimeUtil.startOfMonth(date: currentDate));
+    final monthEnd = monthFormat.format(DateTimeUtil.endOfMonth(date: currentDate));
 
-    final yearStart = yearFormat.format(DateTimeUtil.startOfYear(currentDate));
-    final yearEnd = yearFormat.format(DateTimeUtil.endOfYear(currentDate));
+    final yearStart = yearFormat.format(DateTimeUtil.startOfYear(date: currentDate));
+    final yearEnd = yearFormat.format(DateTimeUtil.endOfYear(date: currentDate));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

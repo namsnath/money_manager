@@ -68,8 +68,8 @@ class TransactionProvider extends ChangeNotifier {
 
     List<Map<String, dynamic>> dayAggregate = await db.rawQuery(
       getAggregateQuery(
-        DateTimeUtil.startOfDay(date).millisecondsSinceEpoch,
-        DateTimeUtil.endOfDay(date).millisecondsSinceEpoch,
+        DateTimeUtil.startOfDay(date: date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfDay(date: date).millisecondsSinceEpoch,
         account,
       ),
     );
@@ -80,8 +80,8 @@ class TransactionProvider extends ChangeNotifier {
 
     List<Map<String, dynamic>> weekAggregate = await db.rawQuery(
       getAggregateQuery(
-        DateTimeUtil.startOfWeek(date).millisecondsSinceEpoch,
-        DateTimeUtil.endOfWeek(date).millisecondsSinceEpoch,
+        DateTimeUtil.startOfWeek(date: date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfWeek(date: date).millisecondsSinceEpoch,
         account,
       ),
     );
@@ -92,8 +92,8 @@ class TransactionProvider extends ChangeNotifier {
 
     List<Map<String, dynamic>> monthAggregate = await db.rawQuery(
       getAggregateQuery(
-        DateTimeUtil.startOfMonth(date).millisecondsSinceEpoch,
-        DateTimeUtil.endOfMonth(date).millisecondsSinceEpoch,
+        DateTimeUtil.startOfMonth(date: date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfMonth(date: date).millisecondsSinceEpoch,
         account,
       ),
     );
@@ -104,8 +104,8 @@ class TransactionProvider extends ChangeNotifier {
 
     List<Map<String, dynamic>> yearAggregate = await db.rawQuery(
       getAggregateQuery(
-        DateTimeUtil.startOfYear(date).millisecondsSinceEpoch,
-        DateTimeUtil.endOfYear(date).millisecondsSinceEpoch,
+        DateTimeUtil.startOfYear(date: date).millisecondsSinceEpoch,
+        DateTimeUtil.endOfYear(date: date).millisecondsSinceEpoch,
         account,
       ),
     );
