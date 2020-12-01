@@ -37,41 +37,48 @@ class DateTimeUtil {
 
   // Start of ... methods
 
-  static DateTime startOfDay(DateTime date) {
+  static DateTime startOfDay({DateTime date}) {
+    date = date ?? DateTime.now();
     return DateTime(date.year, date.month, date.day);
   }
 
-  static DateTime startOfWeek(DateTime date) {
+  static DateTime startOfWeek({DateTime date}) {
+    date = date ?? DateTime.now();
     DateTime startDate = firstDayOfWeek(date);
     return DateTime(startDate.year, startDate.month, startDate.day);
   }
 
-  static DateTime startOfMonth(DateTime date) {
+  static DateTime startOfMonth({DateTime date}) {
+    date = date ?? DateTime.now();
     return DateTime(date.year, date.month);
   }
 
-  static DateTime startOfYear(DateTime date) {
+  static DateTime startOfYear({DateTime date}) {
+    date = date ?? DateTime.now();
     return DateTime(date.year);
   }
 
   // End of ... methods
 
-  static DateTime endOfDay(DateTime date) {
+  static DateTime endOfDay({DateTime date}) {
+    date = date ?? DateTime.now();
     return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   }
 
-  static DateTime endOfWeek(DateTime date) {
+  static DateTime endOfWeek({DateTime date}) {
+    date = date ?? DateTime.now();
     // Add 7 days to current date and get firstDay of next week (will return 12pm)
     DateTime beginningNextWeek = firstDayOfWeek(date.add(Duration(days: 7)));
     // Create DateTime for start of first day
-    DateTime endDate = startOfDay(beginningNextWeek);
+    DateTime endDate = startOfDay(date: beginningNextWeek);
     // Subtract 1 ms to get previous day
     endDate = endDate.subtract(Duration(milliseconds: 1));
 
     return endDate;
   }
 
-  static DateTime endOfMonth(DateTime date) {
+  static DateTime endOfMonth({DateTime date}) {
+    date = date ?? DateTime.now();
     var beginningNextMonth = (date.month < 12)
         ? DateTime(date.year, date.month + 1)
         : DateTime(date.year + 1, 1);
@@ -81,7 +88,8 @@ class DateTimeUtil {
     return beginningNextMonth;
   }
 
-  static DateTime endOfYear(DateTime date) {
+  static DateTime endOfYear({DateTime date}) {
+    date = date ?? DateTime.now();
     return DateTime(date.year + 1).subtract(Duration(milliseconds: 1));
   }
 }
