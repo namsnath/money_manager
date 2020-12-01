@@ -141,9 +141,9 @@ class CategoryChart extends HookWidget {
       child: CircularProgressIndicator(),
     );
 
-    if (futureProvider.data != null && futureProvider.data.value.isNotEmpty) {
+    if (futureProvider.data != null) {
+      if (futureProvider.data.value.isNotEmpty) {
 
-      futureProvider.data.value.map((v) => print('${v.category}, ${v.debitSum}')).toList();
       final chart = charts.PieChart(
         [
           charts.Series<CategoryAggregateQueryData, dynamic>(
@@ -203,6 +203,9 @@ class CategoryChart extends HookWidget {
         width: double.infinity,
         child: chart,
       );
+      } else {
+        child = Text('No Data');
+      }
     }
 
     return Padding(
