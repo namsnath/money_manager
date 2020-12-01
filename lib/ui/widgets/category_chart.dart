@@ -15,9 +15,17 @@ import 'package:money_manager/core/utils/datetime_util.dart';
 class CategoryAggregateData with EquatableMixin {
   final AccountMasterModel account;
   final TransactionTypeModel txnType;
+  final int startTime;
+  final int endTime;
   final int parentId;
 
-  CategoryAggregateData({this.account, this.txnType, this.parentId});
+  CategoryAggregateData({
+    this.account,
+    this.txnType,
+    this.parentId,
+    this.startTime,
+    this.endTime,
+  });
 
   @override
   List<Object> get props => [account, txnType];
@@ -89,6 +97,10 @@ class CategoryChartCard extends HookWidget {
           CategoryChart(
             account: account,
             parentId: selectedId.value,
+            startTime: DateTimeUtil.startOfMonth(DateTime.now())
+                .millisecondsSinceEpoch,
+            endTime:
+                DateTimeUtil.endOfMonth(DateTime.now()).millisecondsSinceEpoch,
             changeId: _changeId,
           ),
         ],
@@ -101,11 +113,15 @@ class CategoryChartCard extends HookWidget {
 class CategoryChart extends HookWidget {
   final AccountMasterModel account;
   final int parentId;
+  final int startTime;
+  final int endTime;
   final Function changeId;
 
   CategoryChart({
     this.account,
     this.parentId,
+    this.startTime,
+    this.endTime,
     this.changeId,
   });
 
@@ -115,9 +131,8 @@ class CategoryChart extends HookWidget {
     final catProvider = ref.watch(DbProviders.categoryProvider);
 
     return await Queries.getCategoryAggregate(
-      startTime:
-          DateTimeUtil.startOfMonth(DateTime.now()).millisecondsSinceEpoch,
-      endTime: DateTimeUtil.endOfMonth(DateTime.now()).millisecondsSinceEpoch,
+      startTime: data.startTime,
+      endTime: data.endTime,
       categoryHierarchy: catProvider.categoryHierarchy,
       account: data.account,
       parentId: data.parentId,
@@ -131,6 +146,8 @@ class CategoryChart extends HookWidget {
         CategoryAggregateData(
           account: account,
           parentId: parentId,
+          startTime: startTime,
+          endTime: endTime,
         ),
       ),
     );
@@ -144,65 +161,65 @@ class CategoryChart extends HookWidget {
     if (futureProvider.data != null) {
       if (futureProvider.data.value.isNotEmpty) {
 
-      final chart = charts.PieChart(
-        [
-          charts.Series<CategoryAggregateQueryData, dynamic>(
-            id: 'chart',
-            data: futureProvider.data.value,
-            domainFn: (value, _) => value.category,
-            measureFn: (value, _) => value.debitSum,
-            // colorFn: (value, _) => charts.ColorUtil.fromDartColor(
-            //     Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-            //         .withOpacity(1.0)),
-            labelAccessorFn: (value, _) =>
-                '${value.category}\n(${value.debitSum})',
-          ),
-        ],
-        animate: true,
-        behaviors: [
-          // charts.DatumLegend(),
-        ],
-        defaultRenderer: new charts.ArcRendererConfig(
-          arcWidth: 40,
-          arcRendererDecorators: [
-            charts.ArcLabelDecorator(
-              outsideLabelStyleSpec: charts.TextStyleSpec(
-                color: charts.ColorUtil.fromDartColor(
-                    Theme.of(context).textTheme.bodyText1.color),
-                fontSize: 12,
-              ),
-              leaderLineStyleSpec: charts.ArcLabelLeaderLineStyleSpec(
-                color: charts.ColorUtil.fromDartColor(
-                    Theme.of(context).textTheme.bodyText1.color),
-                thickness: 1.0,
-                length: 20.0,
-              ),
-              labelPosition: charts.ArcLabelPosition.outside,
+        final chart = charts.PieChart(
+          [
+            charts.Series<CategoryAggregateQueryData, dynamic>(
+              id: 'chart',
+              data: futureProvider.data.value,
+              domainFn: (value, _) => value.category,
+              measureFn: (value, _) => value.debitSum,
+              // colorFn: (value, _) => charts.ColorUtil.fromDartColor(
+              //     Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+              //         .withOpacity(1.0)),
+              labelAccessorFn: (value, _) =>
+                  '${value.category}\n(${value.debitSum})',
             ),
           ],
-        ),
-        selectionModels: [
-          charts.SelectionModelConfig(
-            type: charts.SelectionModelType.info,
-            changedListener: (model) {
-              final selectedDatum = model.selectedDatum[0].datum;
-              final childrenCount = selectedDatum.childrenCount;
-              if (childrenCount == 0) return;
-
-              changeId(
-                selectedDatum.currentId,
-                selectedDatum.category,
-              );
-            },
+          animate: true,
+          behaviors: [
+            // charts.DatumLegend(),
+          ],
+          defaultRenderer: new charts.ArcRendererConfig(
+            arcWidth: 40,
+            arcRendererDecorators: [
+              charts.ArcLabelDecorator(
+                outsideLabelStyleSpec: charts.TextStyleSpec(
+                  color: charts.ColorUtil.fromDartColor(
+                      Theme.of(context).textTheme.bodyText1.color),
+                  fontSize: 12,
+                ),
+                leaderLineStyleSpec: charts.ArcLabelLeaderLineStyleSpec(
+                  color: charts.ColorUtil.fromDartColor(
+                      Theme.of(context).textTheme.bodyText1.color),
+                  thickness: 1.0,
+                  length: 20.0,
+                ),
+                labelPosition: charts.ArcLabelPosition.outside,
+              ),
+            ],
           ),
-        ],
-      );
+          selectionModels: [
+            charts.SelectionModelConfig(
+              type: charts.SelectionModelType.info,
+              changedListener: (model) {
+                final selectedDatum = model.selectedDatum[0].datum;
+                final childrenCount = selectedDatum.childrenCount;
+                if (childrenCount == 0) return;
 
-      child = SizedBox(
-        height: MediaQuery.of(context).size.height / 4,
-        width: double.infinity,
-        child: chart,
-      );
+                changeId(
+                  selectedDatum.currentId,
+                  selectedDatum.category,
+                );
+              },
+            ),
+          ],
+        );
+
+        child = SizedBox(
+          height: MediaQuery.of(context).size.height / 4,
+          width: double.infinity,
+          child: chart,
+        );
       } else {
         child = Text('No Data');
       }
